@@ -1,0 +1,335 @@
+{
+  "name": "Banana_Pro_image_generation_by_kie_ai",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Banana Ai Image Generation:",
+        "formFields": {
+          "values": [
+            { "fieldLabel": "Image Generation Idea:", "requiredField": true },
+            {
+              "fieldLabel": "Resolution",
+              "fieldType": "dropdown",
+              "fieldOptions": { "values": [ { "option": "1K" }, { "option": "2K" } ] },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [-976, 416],
+      "id": "81794d08-48d3-424b-a968-6b5ff09ba8ac",
+      "name": "On form submission",
+      "webhookId": "GENERATED_ON_IMPORT"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['Image Generation Idea:'] }}",
+        "options": {
+          "systemMessage": "You are a professional prompt engineer specializing in AI image generation for the Nano Banana Pro model (via kie.ai).\n\nYour job: take a user's rough, casual image idea and rewrite it into a single, detailed, cinematic image-generation prompt.\n\nRules:\n1. Output ONLY the final image prompt as plain text — no explanations, no markdown, no quotation marks, no labels like \"Prompt:\".\n2. Always include: subject description, setting/environment, lighting style, camera/lens details (e.g. 85mm, wide-angle, macro), mood/atmosphere, and color grading style.\n3. Keep the prompt between 40-80 words — detailed but not bloated.\n4. Never include text overlays, logos, or watermarks unless the user explicitly asks for them.\n5. If the user's idea is vague, creatively fill in reasonable artistic details (setting, lighting, mood) rather than asking clarifying questions.\n6. Match the tone to the subject — playful/bright for casual subjects, moody/dramatic for serious ones, clean/minimal for product shots.\n7. Avoid copyrighted characters, real public figures, or brand logos.\n8. Output must be a single paragraph, ready to be inserted directly into a JSON \"prompt\" field."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-752, 416],
+      "id": "d1ea99ad-1c1a-4527-8404-2580682ce95a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "gpt-5-mini" },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [-688, 656],
+      "id": "152bc313-d548-4842-b141-9e964a9fb590",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": { "id": "YOUR_OPENAI_CREDENTIAL_ID", "name": "YOUR_OPENAI_CREDENTIAL_NAME" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"nano-banana-2\",\n  \"input\": {\n    \"prompt\": \"{{ $json.output }}\",\n    \"resolution\": \"{{ $('On form submission').item.json['Resolution'] }}\"  }\n}\n",
+        "options": { "redirect": { "redirect": {} } }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [-400, 416],
+      "id": "394cf304-5b8a-46a4-a8ff-03cae13ce33a",
+      "name": "Create Image Task",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": { "id": "YOUR_KIE_AI_CREDENTIAL_ID", "name": "YOUR_KIE_AI_CREDENTIAL_NAME" }
+      }
+    },
+    {
+      "parameters": { "amount": 30 },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [-176, 416],
+      "id": "ab4782eb-cc9a-4eeb-8132-77561f596521",
+      "name": "Wait 1",
+      "webhookId": "GENERATED_ON_IMPORT"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/jobs/recordInfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": { "parameters": [ { "name": "taskId", "value": "={{ $('Create Image Task').item.json.data.taskId }}" } ] },
+        "options": { "redirect": { "redirect": {} } }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [48, 416],
+      "id": "904db97b-db10-44e3-a844-52e58052bf32",
+      "name": "Check Task Status 1",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": { "id": "YOUR_KIE_AI_CREDENTIAL_ID", "name": "YOUR_KIE_AI_CREDENTIAL_NAME" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [ { "id": "3be5d133-ea63-4cf4-91a6-e0e146bcb8af", "leftValue": "={{ $json.data.state }}", "rightValue": "success", "operator": { "type": "string", "operation": "equals" } } ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [272, 416],
+      "id": "da667e3a-540e-4467-b720-53162dd27603",
+      "name": "If Success 1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [ { "id": "e1a2b3c4-d5e6-4789-9abc-def012345601", "leftValue": "={{ $json.data.state }}", "rightValue": "fail", "operator": { "type": "string", "operation": "equals" } } ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [496, 496],
+      "id": "5efe30f1-96b4-4e5c-8b81-a53ecffc2134",
+      "name": "If Explicitly Failed 1"
+    },
+    {
+      "parameters": { "amount": 30 },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [720, 496],
+      "id": "54bf3d45-d2fe-423c-ac94-b4119ded5054",
+      "name": "Wait 2 (retry)",
+      "webhookId": "GENERATED_ON_IMPORT"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/jobs/recordInfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": { "parameters": [ { "name": "taskId", "value": "={{ $('Create Image Task').item.json.data.taskId }}" } ] },
+        "options": { "redirect": { "redirect": {} } }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [944, 496],
+      "id": "ce465030-6e29-4ddb-b532-007032d86f9e",
+      "name": "Check Task Status 2 (retry)",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": { "id": "YOUR_KIE_AI_CREDENTIAL_ID", "name": "YOUR_KIE_AI_CREDENTIAL_NAME" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [ { "id": "c5e6f7a8-b9c0-4123-def0-123456789005", "leftValue": "={{ $json.data.state }}", "rightValue": "success", "operator": { "type": "string", "operation": "equals" } } ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1168, 496],
+      "id": "d019cd44-831d-4d94-8118-1974e900b594",
+      "name": "If Success 2 (final)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nlet imageUrl = null;\n\ntry {\n  const parsed = JSON.parse(item.data.resultJson);\n  if (parsed.resultUrls && parsed.resultUrls.length > 0) {\n    imageUrl = parsed.resultUrls[0];\n  }\n} catch (e) {\n  imageUrl = null;\n}\n\nreturn [{\n  json: {\n    imageUrl,\n    parseError: imageUrl === null,\n    taskId: item.data.taskId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [496, 208],
+      "id": "24a5cc16-0fd1-49af-a78b-b098cdf1de9d",
+      "name": "Extract Image Data (safe parse)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [ { "id": "e7a8b9c0-d1e2-4345-f012-345678901207", "leftValue": "={{ $json.parseError }}", "rightValue": false, "operator": { "type": "boolean", "operation": "equals" } } ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [720, 208],
+      "id": "0f3d4e75-9ef1-4863-9e55-e9b70f598bec",
+      "name": "If Parse OK"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.imageUrl }}",
+        "options": { "response": { "response": { "responseFormat": "file" } } }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [944, 208],
+      "id": "29bceba4-a88b-4181-a802-0ae5e141c837",
+      "name": "Download Image",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "name": "={{ $('On form submission').item.json['Image Generation Idea:'].replace(/[^a-zA-Z0-9 ]/g, '').trim().substring(0, 50) }}_{{ $('Extract Image Data (safe parse)').item.json.taskId }}.jpg",
+        "driveId": { "__rl": true, "value": "My Drive", "mode": "list", "cachedResultName": "My Drive", "cachedResultUrl": "https://drive.google.com/drive/my-drive" },
+        "folderId": { "__rl": true, "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID", "mode": "list", "cachedResultName": "YOUR_FOLDER_NAME", "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_GOOGLE_DRIVE_FOLDER_ID" },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1168, 208],
+      "id": "bcbffe8c-87e2-47e8-b711-39308d43c1f2",
+      "name": "Upload to Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": { "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID", "name": "YOUR_GOOGLE_DRIVE_CREDENTIAL_NAME" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list", "cachedResultName": "YOUR_SHEET_FILE_NAME", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "Nano Banana Image Link": "={{ $json.webViewLink }}", "Prompt Idea": "={{ $('On form submission').item.json['Image Generation Idea:'] }}" },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "Prompt Idea", "displayName": "Prompt Idea", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Nano Banana Image Link", "displayName": "Nano Banana Image Link", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Image Failed to Generate Reason", "displayName": "Image Failed to Generate Reason", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1392, 208],
+      "id": "ca46744a-173c-4692-b7d6-d34936a930ff",
+      "name": "Log Success Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID", "name": "YOUR_GOOGLE_SHEETS_CREDENTIAL_NAME" }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [ { "id": "a1b2c3d4-e5f6-4789-8123-456789012309", "name": "Image Failed to Generate Reason", "value": "={{ $json.msg ? $json.msg + ' — Task state: ' + $json.data.state : 'Failed to parse image result from kie.ai response' }}", "type": "string" } ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [944, 720],
+      "id": "2dbb234c-d360-4214-8e97-3f3c70987ad4",
+      "name": "Log Failure Reason"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list", "cachedResultName": "YOUR_SHEET_FILE_NAME", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "Image Failed to Generate Reason": "={{ $json['Image Failed to Generate Reason'] }}", "Prompt Idea": "={{ $('On form submission').item.json['Image Generation Idea:'] }}" },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "Prompt Idea", "displayName": "Prompt Idea", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Nano Banana Image Link", "displayName": "Nano Banana Image Link", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": true },
+            { "id": "Image Failed to Generate Reason", "displayName": "Image Failed to Generate Reason", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1168, 720],
+      "id": "f70c190f-4126-40e2-9230-a821e5af2b9a",
+      "name": "Append Failed Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID", "name": "YOUR_GOOGLE_SHEETS_CREDENTIAL_NAME" }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": { "main": [ [ { "node": "AI Agent", "type": "main", "index": 0 } ] ] },
+    "AI Agent": { "main": [ [ { "node": "Create Image Task", "type": "main", "index": 0 } ] ] },
+    "OpenAI Chat Model": { "ai_languageModel": [ [ { "node": "AI Agent", "type": "ai_languageModel", "index": 0 } ] ] },
+    "Create Image Task": { "main": [ [ { "node": "Wait 1", "type": "main", "index": 0 } ] ] },
+    "Wait 1": { "main": [ [ { "node": "Check Task Status 1", "type": "main", "index": 0 } ] ] },
+    "Check Task Status 1": { "main": [ [ { "node": "If Success 1", "type": "main", "index": 0 } ] ] },
+    "If Success 1": { "main": [ [ { "node": "Extract Image Data (safe parse)", "type": "main", "index": 0 } ], [ { "node": "If Explicitly Failed 1", "type": "main", "index": 0 } ] ] },
+    "If Explicitly Failed 1": { "main": [ [ { "node": "Log Failure Reason", "type": "main", "index": 0 } ], [ { "node": "Wait 2 (retry)", "type": "main", "index": 0 } ] ] },
+    "Wait 2 (retry)": { "main": [ [ { "node": "Check Task Status 2 (retry)", "type": "main", "index": 0 } ] ] },
+    "Check Task Status 2 (retry)": { "main": [ [ { "node": "If Success 2 (final)", "type": "main", "index": 0 } ] ] },
+    "If Success 2 (final)": { "main": [ [ { "node": "Extract Image Data (safe parse)", "type": "main", "index": 0 } ], [ { "node": "Log Failure Reason", "type": "main", "index": 0 } ] ] },
+    "Extract Image Data (safe parse)": { "main": [ [ { "node": "If Parse OK", "type": "main", "index": 0 } ] ] },
+    "If Parse OK": { "main": [ [ { "node": "Download Image", "type": "main", "index": 0 } ], [ { "node": "Log Failure Reason", "type": "main", "index": 0 } ] ] },
+    "Download Image": { "main": [ [ { "node": "Upload to Google Drive", "type": "main", "index": 0 } ] ] },
+    "Upload to Google Drive": { "main": [ [ { "node": "Log Success Row", "type": "main", "index": 0 } ] ] },
+    "Log Failure Reason": { "main": [ [ { "node": "Append Failed Row", "type": "main", "index": 0 } ] ] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "versionId": "88783c08-59e0-4a6a-b2cd-5062c500da5f",
+  "meta": { "instanceId": "YOUR_N8N_INSTANCE_ID" },
+  "nodeGroups": [],
+  "id": "GENERATED_ON_IMPORT",
+  "tags": []
+}

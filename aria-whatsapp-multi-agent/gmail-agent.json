@@ -1,0 +1,149 @@
+{
+  "name": "Gmail Agent with Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "{\n  \"name\": \"EmailAgent\",\n  \"description\": \"Manages all email sending, reading and replying operations.\",\n  \"instructions\": [\n    \"Process all email queries, ensuring that if multiple recipients are specified in a single query, each recipient receives a distinct, individualized email or reply. Do not consolidate or mix communications intended for separate users.\",\n    \"Thoroughly analyze the input query to discern all specified recipients and the precise content required for each individual email or reply.\",\n    \"Also, for reading purpose read the proper gmails precisely and give their main purpose for the email\",\n   \"When asked to delete multiple emails (e.g. 'all unread'), first use the search/list tool to retrieve the Message IDs of matching emails, then call the delete tool once per Message ID until all are processed.\"\n  ]\n}\n\n\"\"\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [160, 160],
+      "id": "d56b9e23-a42d-45f7-b552-a1ebbeee6148",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": { "inputSource": "passthrough" },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [-64, 160],
+      "id": "0b4b35e8-780b-4de0-aeb8-025ec9b4efd5",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": { "modelName": "models/gemini-3.5-flash-lite", "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [176, 400],
+      "id": "84c2427c-d5a8-493f-ac5b-19c070bfcb87",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 25,
+        "filters": { "readStatus": "unread" }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [416, 464],
+      "id": "4e51bd53-1178-4b74-8bb1-db9fd5eb7c23",
+      "name": "Get many messages in Gmail",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `Send the given message to provided email.`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [320, 368],
+      "id": "08641b19-17c8-4a1e-93de-7a432e4f1b23",
+      "name": "Send a message in Gmail",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [512, 560],
+      "id": "6448247c-2db0-4e33-8f98-fd48384d3758",
+      "name": "Delete a message in Gmail",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [608, 560],
+      "id": "6719e052-00fa-45f5-9a57-d1550c36e700",
+      "name": "Reply to a message in Gmail",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Get many messages in Gmail": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Delete a message in Gmail": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Reply to a message in Gmail": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "versionId": "542f0fca-7137-42ba-8feb-e2c4c315f9df",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_GMAIL_AGENT_WORKFLOW_ID",
+  "tags": []
+}

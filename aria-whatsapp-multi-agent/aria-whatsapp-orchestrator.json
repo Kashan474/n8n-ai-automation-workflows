@@ -1,5 +1,5 @@
 {
-  "name": "Aria WhatsApp Agent with Gemini",
+  "name": "Aria WhatsApp Agent with Gemini(Production)",
   "nodes": [
     {
       "parameters": {
@@ -86,10 +86,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        -144,
-        992
+        -2032,
+        1088
       ],
-      "id": "e265d47a-5020-45d7-bc35-5e507244eaed",
+      "id": "cddb8eaa-89cf-4d93-ba48-a3c578ee7596",
       "name": "Message Splitter"
     },
     {
@@ -97,22 +97,22 @@
         "promptType": "define",
         "text": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}||{{ $json.segments[0].text }}||{{ $json.content.parts[0].text }}||{{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].text.body }}",
         "options": {
-          "systemMessage": "You are Aria, a WhatsApp assistant. You can answer directly from your own knowledge or use one of your connected tools when the user's request needs live/external data. Always prefer a tool over guessing when one applies.\n\nUse your tools as follows:\n\n- Serp Agent (web search): Use for anything current, factual-but-unknown, or time-sensitive \u2014 news, prices, latest information, general web lookups, weather, or any question you are not fully confident you can answer from memory alone.\n\n- Contact Agent: Use whenever the user asks you to find someone's phone number or email, save a new contact, or check if a contact already exists. Trigger on phrases like \"what's X's number\", \"save this contact\", \"do I have Y saved\".\n\n- Gmail Agent: Use whenever the user asks about their email \u2014 checking inbox, finding a specific email, sending a message to someone, replying to or drafting an email. Trigger on phrases like \"check my email\", \"read my email\", \"send an email to X\", \"any new messages from Y\".\n\n- Calendar Agent: Use whenever the user asks about their schedule \u2014 what's on their calendar, whether they're free at a given time, upcoming meetings. Trigger on phrases like \"am I free tomorrow\", \"what's on my calendar\", \"do I have a meeting at 3pm\".\n\n- Academy Knowledge Base (Pinecone): Use whenever the user asks anything about Flying Colors Academy specifically \u2014 class timings, subjects, fees, admissions, faculty, policies, or facilities. Always check this tool before answering academy-related questions from memory, since your own knowledge may be outdated or wrong.\n\nRules:\n1. If a question clearly matches one of the tool categories above, call that tool \u2014 do not answer from memory instead.\n2. If a question needs multiple tools (e.g. \"email John and also check my calendar for tomorrow\"), call each relevant tool in turn.\n3. If no tool applies (general knowledge, casual conversation, math, etc.), answer directly without calling a tool.\n4. If a tool call fails or returns no result, tell the user plainly rather than guessing an answer.\n5. Keep replies concise and conversational \u2014 this is a WhatsApp chat, not an email or report."
+          "systemMessage": "You are Aria, a WhatsApp assistant. You can answer directly from your own knowledge or use one of your connected tools when the user's request needs live/external data. Always prefer a tool over guessing when one applies.\n\nUse your tools as follows:\n\n- Serp Agent (web search): Use for anything current, factual-but-unknown, or time-sensitive — news, prices, latest information, general web lookups, weather, or any question you are not fully confident you can answer from memory alone.\n\n- Contact Agent: Use whenever the user asks you to find someone's phone number or email, save a new contact, or check if a contact already exists. Trigger on phrases like \"what's X's number\", \"save this contact\", \"do I have Y saved\".\n\n- Gmail Agent: Use whenever the user asks about their email — checking inbox, finding a specific email, sending a message to someone, replying to or drafting an email. Trigger on phrases like \"check my email\", \"read my email\", \"send an email to X\", \"any new messages from Y\".\n\n- Calendar Agent: Use whenever the user asks about their schedule — what's on their calendar, whether they're free at a given time, upcoming meetings. Trigger on phrases like \"am I free tomorrow\", \"what's on my calendar\", \"do I have a meeting at 3pm\".\n\n- Academy Knowledge Base (Pinecone): Use whenever the user asks anything about Flying Colors Academy specifically — class timings, subjects, fees, admissions, faculty, policies, or facilities. Always check this tool before answering academy-related questions from memory, since your own knowledge may be outdated or wrong.\n\nRules:\n1. If a question clearly matches one of the tool categories above, call that tool — do not answer from memory instead.\n2. If a question needs multiple tools (e.g. \"email John and also check my calendar for tomorrow\"), call each relevant tool in turn.\n3. If no tool applies (general knowledge, casual conversation, math, etc.), answer directly without calling a tool.\n4. If a tool call fails or returns no result, tell the user plainly rather than guessing an answer.\n5. Keep replies concise and conversational — this is a WhatsApp chat, not an email or report."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1168,
+        -720,
         528
       ],
-      "id": "ffffbdc5-1741-444f-84f6-64931c4c5fd3",
+      "id": "a8beb7bb-e606-4f43-a462-5d48afa4fe73",
       "name": "AI Agent"
     },
     {
       "parameters": {
         "operation": "send",
-        "phoneNumberId": "=YOUR_WHATSAPP_PHONE_NUMBER_ID",
+        "phoneNumberId": "=1094159927105386",
         "recipientPhoneNumber": "=+{{ $('Post Webhook').item.json.body.entry[0].changes[0].value.contacts[0].wa_id }}",
         "textBody": "={{ $json.output }}",
         "additionalFields": {}
@@ -120,18 +120,18 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        1920,
-        448
+        32,
+        496
       ],
-      "id": "164fdc82-3ab4-462f-bbf4-511b161790ff",
+      "id": "470cf8e6-aedf-45dc-9fd2-3192566f4dc0",
       "name": "Send message",
-      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "webhookId": "6955229c-770a-4edc-83e7-1d704f8bb4a8",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "credentials": {
         "whatsAppApi": {
-          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "id": "rU6tSf9X5o00Y5VK",
           "name": "WhatsApp account"
         }
       },
@@ -177,53 +177,53 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        752,
+        -1136,
         1008
       ],
-      "id": "803164a5-e0de-432c-8ae6-1c5acb2293c8",
+      "id": "8509fb52-e401-4ec9-aa74-69a54d95592d",
       "name": "Transcribe",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "YOUR_GROQ_HEADER_AUTH_CREDENTIAL_ID",
-          "name": "Groq Header Auth account"
+          "id": "5vskUC7FqVytdojS",
+          "name": "Header Auth account"
         }
       },
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "path": "whatsapp",
+        "path": "783c981f-7d6f-4390-895b-b27657d4bb5e",
         "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -368,
+        -2480,
         96
       ],
-      "id": "5ea88718-8070-4006-a8d8-4266155ab4d3",
+      "id": "ced52338-340a-407b-af1c-1a008a5609a8",
       "name": "Get Webhook",
-      "webhookId": "YOUR_WHATSAPP_WEBHOOK_ID"
+      "webhookId": "783c981f-7d6f-4390-895b-b27657d4bb5e"
     },
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "whatsapp",
+        "path": "783c981f-7d6f-4390-895b-b27657d4bb5e",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -368,
-        1024
+        -2480,
+        1232
       ],
-      "id": "09bd376e-3ed1-49cb-b12d-497a8ed0ab6a",
+      "id": "4e49fc7b-99e5-4664-a0d3-91b51726cd8f",
       "name": "Post Webhook",
-      "webhookId": "YOUR_WHATSAPP_WEBHOOK_ID"
+      "webhookId": "c3b1cd90-a34f-402d-af0f-2d5885dfc98a"
     },
     {
       "parameters": {
@@ -234,18 +234,18 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        80,
+        -1808,
         1552
       ],
-      "id": "5b043c00-141f-4208-8491-a18992595d04",
+      "id": "2408979c-7535-4d73-8761-11ed1c9ae8f6",
       "name": "Download Image",
-      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "webhookId": "8e14e9e9-5bdb-4d02-a7aa-22089f145556",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "credentials": {
         "whatsAppApi": {
-          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "id": "rU6tSf9X5o00Y5VK",
           "name": "WhatsApp account"
         }
       },
@@ -260,18 +260,18 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        304,
+        -1584,
         928
       ],
-      "id": "9051eb76-1252-491c-9026-d74d22472e99",
+      "id": "32ef63f6-7c09-464e-9b45-adad816bf8a5",
       "name": "Download Audio",
-      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "webhookId": "d0ee2ccf-baaa-43c5-9664-a9bc0769b12e",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "credentials": {
         "whatsAppApi": {
-          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "id": "rU6tSf9X5o00Y5VK",
           "name": "WhatsApp account"
         }
       },
@@ -282,9 +282,9 @@
         "description": "Use this tool to search the web for current, real-time, or factual information not already known (news, prices, latest info, general web lookups). Call this when the user's question requires up-to-date information beyond what you already know.",
         "workflowId": {
           "__rl": true,
-          "value": "YOUR_SERP_AGENT_WORKFLOW_ID",
+          "value": "mSSzshD6gV6cLqZ1",
           "mode": "list",
-          "cachedResultUrl": "/workflow/YOUR_SERP_AGENT_WORKFLOW_ID",
+          "cachedResultUrl": "/workflow/mSSzshD6gV6cLqZ1",
           "cachedResultName": "Serp Agent with Gemini"
         },
         "workflowInputs": {
@@ -299,10 +299,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        1112,
+        -776,
         744
       ],
-      "id": "68c0752a-0e32-43d0-ab34-502164286e66",
+      "id": "4bf952c7-d6e7-4fa0-86bc-b403f3ad3d87",
       "name": "Call 'Serp Agent with Gemini'"
     },
     {
@@ -310,9 +310,9 @@
         "description": "Use this tool to look up, search, add, or update contact information (name, phone number, email) in the user's contacts. Call this whenever the user asks to find someone's contact details, save a new contact, or check if a contact already exists.",
         "workflowId": {
           "__rl": true,
-          "value": "YOUR_CONTACT_AGENT_WORKFLOW_ID",
+          "value": "nt4wQnAiFOqjWs1U",
           "mode": "list",
-          "cachedResultUrl": "/workflow/YOUR_CONTACT_AGENT_WORKFLOW_ID",
+          "cachedResultUrl": "/workflow/nt4wQnAiFOqjWs1U",
           "cachedResultName": "Contact Agent with Gemini"
         },
         "workflowInputs": {
@@ -327,10 +327,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        1240,
+        -648,
         744
       ],
-      "id": "6427ffd9-4867-4cb5-a988-924a2685e810",
+      "id": "6959529d-bfa6-460e-91e4-555797bd35b5",
       "name": "Call 'Contact Agent with Gemini'"
     },
     {
@@ -338,9 +338,9 @@
         "description": "Use this tool to read, search, send, delete or draft emails via Gmail. Call this when the user asks to check their inbox, find a specific email, send a message to someone, or reply to/draft an email.",
         "workflowId": {
           "__rl": true,
-          "value": "YOUR_GMAIL_AGENT_WORKFLOW_ID",
+          "value": "kXAiEnYjUHt1n83Y",
           "mode": "list",
-          "cachedResultUrl": "/workflow/YOUR_GMAIL_AGENT_WORKFLOW_ID",
+          "cachedResultUrl": "/workflow/kXAiEnYjUHt1n83Y",
           "cachedResultName": "Gmail Agent with Gemini"
         },
         "workflowInputs": {
@@ -355,20 +355,20 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        1368,
+        -520,
         744
       ],
-      "id": "c13b46f9-c715-48b2-a5df-65503d664cce",
+      "id": "422563ab-6c8e-4f42-a213-c35a0856d709",
       "name": "Call 'Gmail Agent with Gemini'"
     },
     {
       "parameters": {
-        "description": "Use this tool to check the user's calendar \u2014 view existing events, check availability, or find upcoming meetings. Call this when the user asks what's on their schedule or whether they're free at a given time.",
+        "description": "Use this tool to check the user's calendar — view existing events, check availability, or find upcoming meetings. Call this when the user asks what's on their schedule or whether they're free at a given time.",
         "workflowId": {
           "__rl": true,
-          "value": "YOUR_CALENDAR_AGENT_WORKFLOW_ID",
+          "value": "whKkEKGjQ1pgY9K1",
           "mode": "list",
-          "cachedResultUrl": "/workflow/YOUR_CALENDAR_AGENT_WORKFLOW_ID",
+          "cachedResultUrl": "/workflow/whKkEKGjQ1pgY9K1",
           "cachedResultName": "Calender Agent"
         },
         "workflowInputs": {
@@ -383,10 +383,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        1496,
+        -392,
         744
       ],
-      "id": "d67fdc6c-c797-4e51-84d2-51c442c8cf80",
+      "id": "d0eb407c-13b5-4aaa-b8d2-606284c0be1b",
       "name": "Call 'Calender Agent'"
     },
     {
@@ -400,10 +400,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        80,
+        -2032,
         0
       ],
-      "id": "f6da1a2a-1f9f-4ed9-9787-ecb3aba39ebd",
+      "id": "20ee9acc-56ef-4944-83a0-587c6349523e",
       "name": "Respond to Get Webhook"
     },
     {
@@ -418,17 +418,17 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        304,
+        -1584,
         1632
       ],
-      "id": "7aed44f8-8b8d-4f0a-8b77-df86c913e386",
+      "id": "fe85e643-1cc8-4a39-bd20-d6f3bb1ffef0",
       "name": "Download Image Binary",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "credentials": {
         "whatsAppApi": {
-          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "id": "rU6tSf9X5o00Y5VK",
           "name": "WhatsApp account"
         }
       },
@@ -451,10 +451,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        752,
-        1776
+        -1136,
+        1808
       ],
-      "id": "655e3485-09ee-4837-a9d9-1baf41c3d5e6",
+      "id": "c41378fa-e5b7-4130-a9c4-0ad4fdf1c423",
       "name": "Normalize Image Caption Field"
     },
     {
@@ -470,7 +470,7 @@
             {
               "id": "a1a1a1a1-0001-4a1a-8a1a-000000000001",
               "leftValue": "={{ $json.query['hub.verify_token'] }}",
-              "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
+              "rightValue": "=fca123",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -484,10 +484,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -144,
+        -2256,
         96
       ],
-      "id": "5d7f7e80-750e-4d35-9c63-1efb6e9097a4",
+      "id": "3fc13546-d142-4a4f-809c-b4b847fc3898",
       "name": "Verify Webhook Token",
       "notes": "CONFIGURE: set the WHATSAPP_VERIFY_TOKEN environment variable in n8n to the verify token you register in the Meta App dashboard."
     },
@@ -502,10 +502,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        80,
+        -2032,
         192
       ],
-      "id": "7b698697-55f7-4806-b5fc-c0fef2b40345",
+      "id": "daf039a4-c7aa-45a3-81cf-a8e0c72529f0",
       "name": "Respond Verification Failed"
     },
     {
@@ -525,10 +525,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        1696,
+        -192,
         1216
       ],
-      "id": "00196389-b51b-4d7a-8931-1d4915b22306",
+      "id": "37ae4d18-5783-4410-894f-6b25c199e183",
       "name": "Handle Unsupported Type"
     },
     {
@@ -559,10 +559,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1696,
+        -192,
         528
       ],
-      "id": "a5ee91c9-d80f-4db9-859b-a5abae9a82db",
+      "id": "b5b8d83e-b1b2-4f3b-b076-091dad38a4a8",
       "name": "Validate AI Response"
     },
     {
@@ -572,10 +572,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2144,
-        672
+        256,
+        752
       ],
-      "id": "780dfed8-9c19-4d65-810b-257329a899d8",
+      "id": "63d62746-7341-47cb-8e86-65a2b0106101",
       "name": "Build Error Log Entry"
     },
     {
@@ -588,14 +588,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        528,
+        -1360,
         1008
       ],
-      "id": "36d87072-4f61-40f7-8e02-e1e7f4fd9a8a",
+      "id": "223f4671-b952-4807-83ff-ab93b06919b1",
       "name": "HTTP Request",
       "credentials": {
         "whatsAppApi": {
-          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "id": "rU6tSf9X5o00Y5VK",
           "name": "WhatsApp account"
         }
       }
@@ -605,17 +605,17 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "YOUR_GOOGLE_SHEET_ID",
+          "value": "1IN8qyL4zWbShviYXR4A4uEHXfpZbDUFqmjspd8EYUKQ",
           "mode": "list",
           "cachedResultName": "Error Details",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IN8qyL4zWbShviYXR4A4uEHXfpZbDUFqmjspd8EYUKQ/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IN8qyL4zWbShviYXR4A4uEHXfpZbDUFqmjspd8EYUKQ/edit#gid=0"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -653,15 +653,15 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2368,
-        672
+        480,
+        752
       ],
-      "id": "5789a4f3-bc57-4187-96ba-80c1a5d5ea58",
+      "id": "52e0997c-a8e6-4996-915a-604b7e4560a0",
       "name": "Append row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
-          "name": "Google Sheets account"
+          "id": "rO2798xfIiuzbvr0",
+          "name": "Google Sheets account 2"
         }
       }
     },
@@ -671,9 +671,9 @@
         "select": "channel",
         "channelId": {
           "__rl": true,
-          "value": "YOUR_SLACK_CHANNEL_ID",
+          "value": "C0B6PEF56Q2",
           "mode": "list",
-          "cachedResultName": "your-slack-channel-name"
+          "cachedResultName": "all-hurairah"
         },
         "text": "={{ $if($('Handle Unsupported Type').isExecuted, $('Handle Unsupported Type').item.json.output, $('AI Agent').item.json.output) }}",
         "otherOptions": {}
@@ -681,19 +681,19 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        2144,
-        864
+        256,
+        944
       ],
-      "id": "daa17372-8d02-42cc-90f0-faaee87b3fb9",
+      "id": "815671e4-4d5b-4cc7-8b19-64c7567624d9",
       "name": "Notify Admin - Message Sent",
-      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "webhookId": "592cbd23-8b46-4c12-83fe-587192fa4c55",
       "credentials": {
         "slackOAuth2Api": {
-          "id": "YOUR_SLACK_CREDENTIAL_ID",
-          "name": "Slack account"
+          "id": "XaBNTdrqkC0R3CAJ",
+          "name": "Slack account 3"
         }
       },
-      "notes": "Placeholder \u2014 attach a real Slack credential and pick your channel (or swap for an Email node)."
+      "notes": "Placeholder — attach a real Slack credential and pick your channel (or swap for an Email node)."
     },
     {
       "parameters": {
@@ -701,9 +701,9 @@
         "select": "channel",
         "channelId": {
           "__rl": true,
-          "value": "YOUR_SLACK_CHANNEL_ID",
+          "value": "C0B6PEF56Q2",
           "mode": "list",
-          "cachedResultName": "your-slack-channel-name"
+          "cachedResultName": "all-hurairah"
         },
         "text": "=WhatsApp bot failure\\nNode: {{ $json['Error Details'] }}",
         "otherOptions": {}
@@ -711,19 +711,19 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        2592,
-        672
+        704,
+        752
       ],
-      "id": "675ada92-9607-44eb-87d4-2d42ad14a3c8",
+      "id": "9446b021-f5f0-4c55-b332-a6c9327510fe",
       "name": "Notify Team - Workflow Failed",
-      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "webhookId": "f2ebaff1-103c-4e99-bd16-5316599d45f9",
       "credentials": {
         "slackOAuth2Api": {
-          "id": "YOUR_SLACK_CREDENTIAL_ID",
-          "name": "Slack account"
+          "id": "XaBNTdrqkC0R3CAJ",
+          "name": "Slack account 3"
         }
       },
-      "notes": "Placeholder \u2014 attach a real Slack credential and pick your channel (or swap for an Email node)."
+      "notes": "Placeholder — attach a real Slack credential and pick your channel (or swap for an Email node)."
     },
     {
       "parameters": {
@@ -733,15 +733,15 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.1,
       "position": [
-        984,
+        -904,
         744
       ],
-      "id": "bfe5c679-b78c-400f-9067-84d91d769f94",
+      "id": "218a0d87-f379-4db1-9451-8ed9e37facda",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "YOUR_GEMINI_CREDENTIAL_ID",
-          "name": "Google Gemini API account"
+          "id": "Wi27IEMttC8onr0e",
+          "name": "Google Gemini(PaLM) Api account"
         }
       }
     },
@@ -760,21 +760,66 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1.2,
       "position": [
-        528,
+        -1360,
         1696
       ],
-      "id": "b0b27f45-291c-4648-a454-2a665d5268ba",
+      "id": "0ea383b2-fdeb-4066-869e-b524fd067e5f",
       "name": "Analyze an image",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "credentials": {
         "googlePalmApi": {
-          "id": "YOUR_GEMINI_CREDENTIAL_ID",
-          "name": "Google Gemini API account"
+          "id": "Wi27IEMttC8onr0e",
+          "name": "Google Gemini(PaLM) Api account"
         }
       },
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "guard-0001-check-messages-exist",
+              "leftValue": "={{ $json.body.entry[0].changes[0].value.messages }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2256,
+        1232
+      ],
+      "id": "fc345acf-a732-4cb0-a61b-c6729abfa2d0",
+      "name": "Is Real Message?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2032,
+        1344
+      ],
+      "id": "7a403740-3a81-4da2-a57a-6b50a562500d",
+      "name": "Ignore Status Callback"
     }
   ],
   "pinData": {},
@@ -812,7 +857,7 @@
       "main": [
         [
           {
-            "node": "Message Splitter",
+            "node": "Is Real Message?",
             "type": "main",
             "index": 0
           }
@@ -1102,19 +1147,36 @@
           }
         ]
       ]
+    },
+    "Is Real Message?": {
+      "main": [
+        [
+          {
+            "node": "Message Splitter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignore Status Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "47a20281-0adf-4ce6-9043-85cb9571c872",
+  "versionId": "e7579e45-2b5c-4312-bdf9-c91fa10b9fdb",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "YOUR_N8N_INSTANCE_ID"
+    "instanceId": "3480ccf8837aaad3c025110db1f0d1e20d05d4528ca7c8e5ba9b9bfd50134fd3"
   },
   "nodeGroups": [],
-  "id": "YOUR_WHATSAPP_ORCHESTRATOR_WORKFLOW_ID",
+  "id": "pSBqpMDIkiO1jCiS",
   "tags": []
 }

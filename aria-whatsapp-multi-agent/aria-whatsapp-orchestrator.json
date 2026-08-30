@@ -1,0 +1,1120 @@
+{
+  "name": "Aria WhatsApp Agent with Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].type }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "19bd236f-7b97-4c0b-a63f-07d713e729f3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1a28434c-cad3-4666-a68f-fe7f377a65f7",
+                    "leftValue": "={{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].type }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f011b093-d47f-40e2-8ff8-1b09d019b5a2",
+                    "leftValue": "={{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].type }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        992
+      ],
+      "id": "e265d47a-5020-45d7-bc35-5e507244eaed",
+      "name": "Message Splitter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}||{{ $json.segments[0].text }}||{{ $json.content.parts[0].text }}||{{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "You are Aria, a WhatsApp assistant. You can answer directly from your own knowledge or use one of your connected tools when the user's request needs live/external data. Always prefer a tool over guessing when one applies.\n\nUse your tools as follows:\n\n- Serp Agent (web search): Use for anything current, factual-but-unknown, or time-sensitive \u2014 news, prices, latest information, general web lookups, weather, or any question you are not fully confident you can answer from memory alone.\n\n- Contact Agent: Use whenever the user asks you to find someone's phone number or email, save a new contact, or check if a contact already exists. Trigger on phrases like \"what's X's number\", \"save this contact\", \"do I have Y saved\".\n\n- Gmail Agent: Use whenever the user asks about their email \u2014 checking inbox, finding a specific email, sending a message to someone, replying to or drafting an email. Trigger on phrases like \"check my email\", \"read my email\", \"send an email to X\", \"any new messages from Y\".\n\n- Calendar Agent: Use whenever the user asks about their schedule \u2014 what's on their calendar, whether they're free at a given time, upcoming meetings. Trigger on phrases like \"am I free tomorrow\", \"what's on my calendar\", \"do I have a meeting at 3pm\".\n\n- Academy Knowledge Base (Pinecone): Use whenever the user asks anything about Flying Colors Academy specifically \u2014 class timings, subjects, fees, admissions, faculty, policies, or facilities. Always check this tool before answering academy-related questions from memory, since your own knowledge may be outdated or wrong.\n\nRules:\n1. If a question clearly matches one of the tool categories above, call that tool \u2014 do not answer from memory instead.\n2. If a question needs multiple tools (e.g. \"email John and also check my calendar for tomorrow\"), call each relevant tool in turn.\n3. If no tool applies (general knowledge, casual conversation, math, etc.), answer directly without calling a tool.\n4. If a tool call fails or returns no result, tell the user plainly rather than guessing an answer.\n5. Keep replies concise and conversational \u2014 this is a WhatsApp chat, not an email or report."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1168,
+        528
+      ],
+      "id": "ffffbdc5-1741-444f-84f6-64931c4c5fd3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=YOUR_WHATSAPP_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "=+{{ $('Post Webhook').item.json.body.entry[0].changes[0].value.contacts[0].wa_id }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        448
+      ],
+      "id": "164fdc82-3ab4-462f-bbf4-511b161790ff",
+      "name": "Send message",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "name": "WhatsApp account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "temperature",
+              "value": "0"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        752,
+        1008
+      ],
+      "id": "803164a5-e0de-432c-8ae6-1c5acb2293c8",
+      "name": "Transcribe",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_GROQ_HEADER_AUTH_CREDENTIAL_ID",
+          "name": "Groq Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        96
+      ],
+      "id": "5ea88718-8070-4006-a8d8-4266155ab4d3",
+      "name": "Get Webhook",
+      "webhookId": "YOUR_WHATSAPP_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        1024
+      ],
+      "id": "09bd376e-3ed1-49cb-b12d-497a8ed0ab6a",
+      "name": "Post Webhook",
+      "webhookId": "YOUR_WHATSAPP_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].image.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1552
+      ],
+      "id": "5b043c00-141f-4208-8491-a18992595d04",
+      "name": "Download Image",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "name": "WhatsApp account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('Post Webhook').item.json.body.entry[0].changes[0].value.messages[0].audio.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        928
+      ],
+      "id": "9051eb76-1252-491c-9026-d74d22472e99",
+      "name": "Download Audio",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "name": "WhatsApp account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to search the web for current, real-time, or factual information not already known (news, prices, latest info, general web lookups). Call this when the user's question requires up-to-date information beyond what you already know.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_SERP_AGENT_WORKFLOW_ID",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YOUR_SERP_AGENT_WORKFLOW_ID",
+          "cachedResultName": "Serp Agent with Gemini"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1112,
+        744
+      ],
+      "id": "68c0752a-0e32-43d0-ab34-502164286e66",
+      "name": "Call 'Serp Agent with Gemini'"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to look up, search, add, or update contact information (name, phone number, email) in the user's contacts. Call this whenever the user asks to find someone's contact details, save a new contact, or check if a contact already exists.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_CONTACT_AGENT_WORKFLOW_ID",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YOUR_CONTACT_AGENT_WORKFLOW_ID",
+          "cachedResultName": "Contact Agent with Gemini"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1240,
+        744
+      ],
+      "id": "6427ffd9-4867-4cb5-a988-924a2685e810",
+      "name": "Call 'Contact Agent with Gemini'"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to read, search, send, delete or draft emails via Gmail. Call this when the user asks to check their inbox, find a specific email, send a message to someone, or reply to/draft an email.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_GMAIL_AGENT_WORKFLOW_ID",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YOUR_GMAIL_AGENT_WORKFLOW_ID",
+          "cachedResultName": "Gmail Agent with Gemini"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1368,
+        744
+      ],
+      "id": "c13b46f9-c715-48b2-a5df-65503d664cce",
+      "name": "Call 'Gmail Agent with Gemini'"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to check the user's calendar \u2014 view existing events, check availability, or find upcoming meetings. Call this when the user asks what's on their schedule or whether they're free at a given time.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_CALENDAR_AGENT_WORKFLOW_ID",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YOUR_CALENDAR_AGENT_WORKFLOW_ID",
+          "cachedResultName": "Calender Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1496,
+        744
+      ],
+      "id": "d67fdc6c-c797-4e51-84d2-51c442c8cf80",
+      "name": "Call 'Calender Agent'"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        80,
+        0
+      ],
+      "id": "f6da1a2a-1f9f-4ed9-9787-ecb3aba39ebd",
+      "name": "Respond to Get Webhook"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        304,
+        1632
+      ],
+      "id": "7aed44f8-8b8d-4f0a-8b77-df86c913e386",
+      "name": "Download Image Binary",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "name": "WhatsApp account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7be25a4e-1f1c-4896-81b5-d3c7ba15eddf",
+              "name": "content.parts[0].text",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        752,
+        1776
+      ],
+      "id": "655e3485-09ee-4837-a9d9-1baf41c3d5e6",
+      "name": "Normalize Image Caption Field"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1a1a1a1-0001-4a1a-8a1a-000000000001",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        96
+      ],
+      "id": "5d7f7e80-750e-4d35-9c63-1efb6e9097a4",
+      "name": "Verify Webhook Token",
+      "notes": "CONFIGURE: set the WHATSAPP_VERIFY_TOKEN environment variable in n8n to the verify token you register in the Meta App dashboard."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"verification_failed\" } }}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        80,
+        192
+      ],
+      "id": "7b698697-55f7-4806-b5fc-c0fef2b40345",
+      "name": "Respond Verification Failed"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "unsupported-0001",
+              "name": "output",
+              "value": "Sorry, I can only handle text, voice note, and image messages right now.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1696,
+        1216
+      ],
+      "id": "00196389-b51b-4d7a-8931-1d4915b22306",
+      "name": "Handle Unsupported Type"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "validate-0001",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        528
+      ],
+      "id": "a5ee91c9-d80f-4db9-859b-a5abae9a82db",
+      "name": "Validate AI Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const execId = $execution.id;\nconst now = new Date().toISOString();\nconst errorItem = $json.error || null;\nlet waId = 'unknown';\nlet msgType = 'unknown';\ntry {\n  const original = $('Post Webhook').item.json.body.entry[0].changes[0].value;\n  waId = (original.contacts && original.contacts[0] && original.contacts[0].wa_id) || 'unknown';\n  msgType = (original.messages && original.messages[0] && original.messages[0].type) || 'unknown';\n} catch (e) { /* payload shape unavailable, keep defaults */ }\nconst rawInput = $json.output || $json.text || (($json.segments || [])[0] || {}).text\n  || (($json.content || {}).parts ? (($json.content.parts[0] || {}).text) : null) || null;\nreturn [{\n  json: {\n    logId: `err_${execId}_${Date.now()}`,\n    timestamp: now,\n    executionId: execId,\n    failedNode: (errorItem && errorItem.node && errorItem.node.name) || 'Validation / Unsupported Type',\n    errorMessage: (errorItem && errorItem.message) || 'AI response was empty, or message type is unsupported.',\n    waId,\n    messageType: msgType,\n    rawInputSnapshot: JSON.stringify($json).slice(0, 1000)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        672
+      ],
+      "id": "780dfed8-9c19-4d65-810b-257329a899d8",
+      "name": "Build Error Log Entry"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        528,
+        1008
+      ],
+      "id": "36d87072-4f61-40f7-8e02-e1e7f4fd9a8a",
+      "name": "HTTP Request",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_WHATSAPP_CREDENTIAL_ID",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Error Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Error Details": "={{ $json.errorMessage }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "S. No",
+              "displayName": "S. No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Error Details",
+              "displayName": "Error Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        672
+      ],
+      "id": "5789a4f3-bc57-4187-96ba-80c1a5d5ea58",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "your-slack-channel-name"
+        },
+        "text": "={{ $if($('Handle Unsupported Type').isExecuted, $('Handle Unsupported Type').item.json.output, $('AI Agent').item.json.output) }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        864
+      ],
+      "id": "daa17372-8d02-42cc-90f0-faaee87b3fb9",
+      "name": "Notify Admin - Message Sent",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      },
+      "notes": "Placeholder \u2014 attach a real Slack credential and pick your channel (or swap for an Email node)."
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "your-slack-channel-name"
+        },
+        "text": "=WhatsApp bot failure\\nNode: {{ $json['Error Details'] }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2592,
+        672
+      ],
+      "id": "675ada92-9607-44eb-87d4-2d42ad14a3c8",
+      "name": "Notify Team - Workflow Failed",
+      "webhookId": "AUTO_GENERATED_ON_IMPORT",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      },
+      "notes": "Placeholder \u2014 attach a real Slack credential and pick your channel (or swap for an Email node)."
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        984,
+        744
+      ],
+      "id": "bfe5c679-b78c-400f-9067-84d91d769f94",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        528,
+        1696
+      ],
+      "id": "b0b27f45-291c-4648-a454-2a665d5268ba",
+      "name": "Analyze an image",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini API account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Webhook Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Webhook Token": {
+      "main": [
+        [
+          {
+            "node": "Respond to Get Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Verification Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message Splitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Splitter": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Unsupported Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Unsupported Type": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Validate AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate AI Response": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin - Message Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Download Image Binary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image Binary": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Image Caption Field": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Log Entry": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Serp Agent with Gemini'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Contact Agent with Gemini'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Gmail Agent with Gemini'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Calender Agent'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Notify Team - Workflow Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Normalize Image Caption Field",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "47a20281-0adf-4ce6-9043-85cb9571c872",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_WHATSAPP_ORCHESTRATOR_WORKFLOW_ID",
+  "tags": []
+}

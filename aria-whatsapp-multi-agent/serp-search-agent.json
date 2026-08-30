@@ -1,0 +1,82 @@
+{
+  "name": "Serp Agent with Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "You are an AI Assistant with access to a SerpAPI (web search) tool.\n\n- For any question requiring current, real-time, or up-to-date \n  information (weather, news, prices, availability, recent events), \n  always use the SerpAPI tool immediately — do not ask for permission.\n- If a location is ambiguous or a search returns unrelated results, \n  automatically retry once with added context (e.g., country name, \n  \"Pakistan\") instead of asking the user to confirm.\n- For general knowledge or well-known facts that don't change, answer \n  directly without searching.\n- Use the tool's returned results to form your answer — don't fabricate \n  details.\n- Only tell the user results are unclear if a retried search also fails."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [160, 160],
+      "id": "b4303766-9ab5-4085-9ff5-29a72db9d968",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": { "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [176, 400],
+      "id": "dea04441-0178-4c5e-94c1-723cf7053cb0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "q": "={{ $json.query }}",
+        "location": "Pakistan",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApiTool",
+      "typeVersion": 1,
+      "position": [304, 400],
+      "id": "37d732b9-9e37-4b30-872b-c024811236af",
+      "name": "Google search in SerpApi",
+      "credentials": {
+        "serpApi": {
+          "id": "YOUR_SERPAPI_CREDENTIAL_ID",
+          "name": "SerpApi account"
+        }
+      }
+    },
+    {
+      "parameters": { "inputSource": "passthrough" },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [-48, 208],
+      "id": "d81dfb32-38cf-4bbb-91db-2cfc4824f96f",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Google search in SerpApi": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "versionId": "9a847872-e19b-4987-8ddd-a7032cedad67",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_SERP_AGENT_WORKFLOW_ID",
+  "tags": []
+}

@@ -1,0 +1,179 @@
+{
+  "name": "Contact Agent with Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "{\n  \"name\": \"ContactAgent\",\n  \"description\": \"Manages Google Contacts search, update (name and phone number), and delete operations.\",\n  \"instructions\": [\n    \"Always use the Get_many_contacts tool to search for and confirm a contact before updating or deleting it. Never act on a guessed or remembered Contact ID.\",\n    \"If the user gives only a name (not an exact ID), search first. If multiple contacts match, list them (name, phone/email) and ask the user to confirm which one before proceeding — never update or delete more than one contact unless the user explicitly says 'all' or names each one individually.\",\n    \"Never invent or fabricate a Contact ID, phone number, or name.\",\n    \"Use Update_Contact_Name only when the user wants to rename a contact (given name / family name). Use Update_Contact_Phone_Number only when the user wants to change a phone number. Never call one tool to achieve the other's purpose.\",\n    \"When updating a phone number, confirm the exact new number (and its label — mobile/home/work — default to mobile if unspecified) before calling the tool.\",\n    \"Deleting a contact is permanent and cannot be undone — only proceed once the exact contact is confirmed.\",\n    \"After any update or delete, report the tool's exact result. If a tool fails or returns nothing, say so plainly instead of assuming success.\",\n    \"Do not perform any contact action (update, delete, create, merge) beyond what was explicitly instructed.\"\n  ]\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [816, 112],
+      "id": "13da81e0-5880-4d2d-a1e6-5567f54a8487",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": { "inputSource": "passthrough" },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [400, 112],
+      "id": "3bb5798e-5dde-49e3-ad27-04f4690d175b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": { "modelName": "models/gemini-3.5-flash-lite", "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [576, 352],
+      "id": "549941b6-3ff7-4b93-97e9-2438c3cc3e37",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 200,
+        "fields": ["names", "nicknames", "phoneNumbers"],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [720, 336],
+      "id": "3d749cb2-2b45-4839-b6ca-b43f4b767d74",
+      "name": "Get_many_contacts",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CONTACTS_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Contact_ID', 'The Google Contact resource ID to rename, found via Get_many_contacts first', 'string') }}",
+        "fields": ["names", "phoneNumbers"],
+        "updateFields": {
+          "givenName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Given_Name', `The new given name for the contact. Don't change if not provided.`, 'string') }}",
+          "emailsUi": {
+            "emailsValues": [
+              {
+                "type": "home",
+                "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('emailsValues0_Value', `The new given Email for the contact. Don't change if not provided.`, 'string') }}"
+              }
+            ]
+          },
+          "phoneUi": {
+            "phoneValues": [
+              {
+                "type": "home",
+                "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phoneValues0_Value', `The new given Phone Number for the contact. Don't change if not provided.`, 'string') }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [880, 352],
+      "id": "ba60cb2e-a67d-4b44-a9f0-67002df341a6",
+      "name": "Update_Contact_Name",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CONTACTS_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "contactId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Contact_ID', 'The Google Contact resource ID to delete, found via Get_many_contacts first and confirmed with the user', 'string') }}"
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [1024, 352],
+      "id": "0572a886-3ffc-4065-b1dd-db4b8840eb80",
+      "name": "Delete_a_Contact",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CONTACTS_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "givenName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Given_Name', `The new given name for the contact.`, 'string') }}",
+        "additionalFields": {
+          "emailsUi": {
+            "emailsValues": [
+              {
+                "type": "home",
+                "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('emailsValues0_Value', `The new given Email for the contact. Don't add it if not provided.`, 'string') }}"
+              }
+            ]
+          },
+          "phoneUi": {
+            "phoneValues": [
+              {
+                "type": "home",
+                "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phoneValues0_Value', `The new given Email for the contact.`, 'string') }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [1200, 336],
+      "id": "0335fb41-d856-47ea-b653-0538ddd8a179",
+      "name": "Create a contact in Google Contacts",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "YOUR_GOOGLE_CONTACTS_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Get_many_contacts": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Update_Contact_Name": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Delete_a_Contact": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Create a contact in Google Contacts": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "versionId": "1a725ec8-464f-4bfb-a054-e2c2c25c4ad9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_CONTACT_AGENT_WORKFLOW_ID",
+  "tags": []
+}

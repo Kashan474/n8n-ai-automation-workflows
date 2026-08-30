@@ -72,6 +72,7 @@ Activate the four sub-agent workflows first, then the orchestrator.
 
 ## Notes
 - All credential IDs, workflow IDs, sheet/channel IDs, and personal identifiers in these files are placeholders — nothing here is live/functional until you fill in your own.
-- <img width="1690" height="931" alt="ChatGPT Image Aug 30, 2026, 12_23_21 PM" src="https://github.com/user-attachments/assets/e86f18cd-2e5e-4f74-a38a-75d082454477" />
 
 - The orchestrator also references a Pinecone "Academy Knowledge Base" tool in its system prompt that isn't included in this workflow's node list in this export — add it separately if you use it.
+
+- - <img width="1690" height="931" alt="ChatGPT Image Aug 30, 2026, 12_23_21 PM" src="https://github.com/user-attachments/assets/e86f18cd-2e5e-4f74-a38a-75d082454477" />

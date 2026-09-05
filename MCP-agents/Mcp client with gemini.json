@@ -1,0 +1,442 @@
+{
+  "name": "MCP Client with Gemini v2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -688,
+        96
+      ],
+      "id": "e411c264-f516-483b-9c15-e3fe59f6bfed",
+      "name": "When chat message received",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "═══════════════════════════════════\nSYSTEM PROMPT — MCP Multi-Tool Agent (FCA)\n═══════════════════════════════════\n\nYou are an AI agent connected to an MCP server exposing these tools:\nCalculator, Wikipedia, SerpAPI, FCA Knowledge Base (Pinecone), Contacts, Gmail, Calendar.\n\n──────────────────────────────\n1. CORE RULE\n──────────────────────────────\nNever answer from memory, assumption, or mental computation when a\ntool exists for the task — always call the correct tool, no matter\nhow simple the request seems. Extract the relevant data/action from\nnatural language and delegate it to the tool; the tool's output is\nthe source of truth and must not be altered, rounded, or \"corrected\"\nunless the user explicitly asks for reformatting.\n\n──────────────────────────────\n2. TOOL USE RULES\n──────────────────────────────\n- Calculator — any arithmetic, percentages, conversions, averages,\n  or numeric computation, however trivial.\n\n- Wikipedia — general/static encyclopedic facts (people, places,\n  history, definitions). Not for live or FCA-specific info.\n\n- FCA Knowledge Base (Pinecone) — anything specific to Flying Colors\n  Academy: timings, fees, admissions, courses, location, policies,\n  FAQs. Always check this before guessing at FCA-specific details.\n\n- SerpAPI — current/real-time web info (news, prices, live results)\n  that Wikipedia and the FCA Knowledge Base can't answer.\n\n- Contacts — get, create, or update contact records directly.\n  Confirm details (name, number, email) before creating/updating;\n  never invent contact info. Deleting a contact goes through the\n  approval-gated tool (see rule 3).\n\n- Gmail — read and get many messages directly. For reply, send, or\n  draft, show the user the exact text before calling the tool unless\n  they've already dictated the final wording. Prefer creating a\n  draft over sending outright when the user hasn't explicitly said\n  \"send\". Deleting a message goes through the approval-gated tool.\n\n- Calendar — read and create events directly, after confirming\n  title, time, and attendees with the user. Deleting an event goes\n  through the approval-gated tool.\n\n──────────────────────────────\n3. DESTRUCTIVE ACTIONS REQUIRE APPROVAL\n──────────────────────────────\nDeleting a contact, a Gmail message, or a calendar event always goes\nthrough the approval-gated delete tools. These tools pause and send\na Slack approval request — tell the user you've sent an approval\nrequest and are waiting on it; do not claim the item is deleted until\nthe tool confirms it. If the approval is rejected, tell the user\nplainly that nothing was deleted.\n\n──────────────────────────────\n4. COMBINED / MULTI-STEP TASKS\n──────────────────────────────\nFor tasks needing multiple tools (e.g., \"look up X, then email it to\nY\"), call each tool separately in the correct order — fact/data\nretrieval first, then the dependent action. Never skip steps or\ninfer intermediate results without a tool call.\n\n──────────────────────────────\n5. TRANSPARENCY\n──────────────────────────────\nBriefly note which tool was used (e.g., \"via Calculator,\" \"via\nGmail\"), but don't expose internal reasoning about whether to use a\ntool — using the right tool is mandatory, not a judgment call.\n\n──────────────────────────────\n6. FAILURE HANDLING\n──────────────────────────────\nIf a required tool is unavailable, errors, or times out, tell the\nuser the action/fact-check couldn't be completed. Never fall back to\na memory-based or estimated answer, and never claim a send/delete/\ncreate action succeeded without a successful tool result confirming it."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -400,
+        96
+      ],
+      "id": "ac5a6732-137e-473c-b9ad-d8f1e52f73dc",
+      "name": "AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "=https://hurairah123.app.n8n.cloud/mcp/fca-agent",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        -208,
+        336
+      ],
+      "id": "9575f762-dd51-4949-9741-58b88caab1eb",
+      "name": "MCP Client",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Bearer Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        -336,
+        336
+      ],
+      "id": "5c4f2b42-73bd-478a-be5a-24d553b84770",
+      "name": "Redis Chat Memory",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "redis": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Redis account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -464,
+        336
+      ],
+      "id": "0eba3a95-dde8-4172-b54a-a9cd409fc31d",
+      "name": "Google Gemini Chat Model",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Gemini Acct 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "your-slack-channel-name"
+        },
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "55495555-1a6a-42ec-9f30-f40a671f3752",
+      "name": "Notify - Success",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "your-slack-channel-name"
+        },
+        "text": "={{ $json.Failure }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        192
+      ],
+      "id": "c887a7cf-7a00-4e3f-b0cb-19bc49cc86dc",
+      "name": "Notify - Failure",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Log Execution",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Entry ID": "={{ $now.toFormat('ddLLyyyy_HHmm') }}",
+            "Failure": "={{ $json.error }}",
+            "Question": "={{ $('When chat message received').item.json.chatInput }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Entry ID",
+              "displayName": "Entry ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Question",
+              "displayName": "Question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Responce",
+              "displayName": "Responce",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Failure",
+              "displayName": "Failure",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        192
+      ],
+      "id": "7c66c423-7c01-464a-8a83-1e6c7290d001",
+      "name": "Log Execution - Failure",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Log Execution",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Entry ID": "={{ $now.toFormat('ddLLyyyy_HHmm') }}",
+            "Question": "={{ $('When chat message received').item.json.chatInput }}",
+            "Responce": "={{ $json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Entry ID",
+              "displayName": "Entry ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Question",
+              "displayName": "Question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Responce",
+              "displayName": "Responce",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Failure",
+              "displayName": "Failure",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6be140df-5d81-482b-800f-527b6fd08096",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Execution - Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Execution - Failure": {
+      "main": [
+        [
+          {
+            "node": "Notify - Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Notify - Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "eb06ac83-416f-47fe-b399-43124e6741fc",
+  "meta": {
+    "instanceId": "REPLACE_WITH_YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "T7PdhBBC7AAgrUdZ",
+  "tags": []
+}

@@ -89,8 +89,11 @@ MIT — use, fork, and modify freely. See `LICENSE`.
 Built with [n8n](https://n8n.io), [Google Gemini](https://ai.google.dev/), and [Pinecone](https://www.pinecone.io/).
 
 
-assets/MCP Client with Gemini v2.jpeg
-assets/MCP Destructive Action Approval..jpeg
-MCP Server with Gemini Embedding v2.jpeg
+### MCP Client with Gemini
+![MCP Client workflow](assets/mcp-client.jpeg)
 
+### MCP Server with Gemini Embedding
+![MCP Server workflow](assets/mcp-server.jpeg)
 
+### MCP Destructive Action Approval
+![Approval workflow](assets/mcp-destructive-approval.jpeg)

@@ -87,3 +87,10 @@ MIT — use, fork, and modify freely. See `LICENSE`.
 ## Credits
 
 Built with [n8n](https://n8n.io), [Google Gemini](https://ai.google.dev/), and [Pinecone](https://www.pinecone.io/).
+
+
+assets/MCP Client with Gemini v2.jpeg
+assets/MCP Destructive Action Approval..jpeg
+MCP Server with Gemini Embedding v2.jpeg
+
+

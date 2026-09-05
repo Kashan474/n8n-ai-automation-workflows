@@ -96,4 +96,5 @@ Built with [n8n](https://n8n.io), [Google Gemini](https://ai.google.dev/), and [
 ![MCP Server workflow](assets/mcp-server.jpeg)
 
 ### MCP Destructive Action Approval
-![Approval workflow](assets/mcp-destructive-approval.jpeg)
+![Approval workflow](n8n-ai-automation-workflows/MCP-agents/assets/mcp-destructive-approval.jpeg)
+

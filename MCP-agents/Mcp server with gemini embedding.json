@@ -1,0 +1,840 @@
+{
+  "name": "MCP Server with Gemini Embedding v2",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "bearerAuth",
+        "path": "fca-agent"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        -64
+      ],
+      "id": "d5446216-6994-4abd-8cf6-d0db2f297b3a",
+      "name": "MCP Server Trigger",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        176
+      ],
+      "id": "f32393a2-c2eb-47bc-a316-d6171dff3b0f",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        176
+      ],
+      "id": "1c4dedc5-69f1-42fd-8add-e1003bf44243",
+      "name": "Wikipedia",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $fromAI('Limit', 'Maximum number of contacts to retrieve (default 500 if the user does not specify a number)', 'number', 500) }}",
+        "fields": [
+          "names",
+          "nicknames",
+          "phoneNumbers"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        176
+      ],
+      "id": "e6d2ffc5-9a49-4b3c-bc46-def2f940db4e",
+      "name": "Get_many_contacts",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ $fromAI('Contact_ID', 'The Google Contact resource ID to rename, found via Get_many_contacts first', 'string') }}",
+        "fields": [
+          "names",
+          "phoneNumbers"
+        ],
+        "updateFields": {
+          "givenName": "={{ $fromAI('Given_Name', `The new given name for the contact. Don't change if not provided.`, 'string') }}",
+          "emailsUi": {
+            "emailsValues": [
+              {
+                "type": "home",
+                "value": "={{ $fromAI('emailsValues0_Value', `The new given Email for the contact. Don't change if not provided.`, 'string') }}"
+              }
+            ]
+          },
+          "phoneUi": {
+            "phoneValues": [
+              {
+                "type": "home",
+                "value": "={{ $fromAI('phoneValues0_Value', `The new given Phone Number for the contact. Don't change if not provided.`, 'string') }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        176
+      ],
+      "id": "b7ab391c-d770-44d3-8842-d2b869482731",
+      "name": "Update_Contact_Name",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "givenName": "={{ $fromAI('Given_Name', `The new given name for the contact.`, 'string') }}",
+        "additionalFields": {
+          "emailsUi": {
+            "emailsValues": [
+              {
+                "type": "home",
+                "value": "={{ $fromAI('emailsValues0_Value', `The new given Email for the contact. Don't add it if not provided.`, 'string') }}"
+              }
+            ]
+          },
+          "phoneUi": {
+            "phoneValues": [
+              {
+                "type": "home",
+                "value": "={{ $fromAI('phoneValues0_Value', `The new given Phone Number for the contact. Don't add it if not provided.`, 'string') }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        176
+      ],
+      "id": "af4985a6-8b34-4f12-8719-5fb481832638",
+      "name": "Create a contact in Google Contacts",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Contacts account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $fromAI('Limit', 'Maximum number of emails to retrieve (default 25 if the user does not specify a number)', 'number', 25) }}",
+        "filters": {
+          "readStatus": "={{ $fromAI('Read_Status', \"Filter by read status: 'unread', 'read', or leave blank for all messages\", 'string', 'unread') }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        176
+      ],
+      "id": "ad7bc05f-5a76-4c8c-991d-3c5dea6107d8",
+      "name": "Get many messages in Gmail",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $fromAI('Message_ID', ``, 'string') }}",
+        "message": "={{ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        176
+      ],
+      "id": "09854d24-d2d1-4eb6-924a-9442b04e0808",
+      "name": "Reply to a message in Gmail",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ $fromAI('Message', `Send the given message to provided email.`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        176
+      ],
+      "id": "6b92104a-5013-45f0-9b09-5d3d62b61d9d",
+      "name": "Send a message in Gmail",
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ $fromAI('Message', `Draft body text.`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        320
+      ],
+      "id": "a54edca7-c1f7-4e1a-9f2a-992ff23d9553",
+      "name": "Create a draft in Gmail",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "webhookId": "REPLACE_WITH_GENERATED_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $fromAI('Calendar_ID', 'The calendar to read from, usually \"primary\" unless the user names another calendar', 'string', 'primary') }}",
+          "mode": "id"
+        },
+        "timeMin": "={{ $fromAI('Time_Min', 'Start of the date range to search, ISO 8601', 'string') }}",
+        "timeMax": "={{ $fromAI('Time_Max', 'End of the date range to search, ISO 8601', 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        176
+      ],
+      "id": "e2debb5c-08a8-4b0a-98c5-1e23661cdde7",
+      "name": "Get many events in Calendar",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $fromAI('Calendar_ID', 'The calendar to add the event to, usually \"primary\"', 'string', 'primary') }}",
+          "mode": "id"
+        },
+        "start": "={{ $fromAI('Start_Time', 'Event start time, ISO 8601', 'string') }}",
+        "end": "={{ $fromAI('End_Time', 'Event end time, ISO 8601', 'string') }}",
+        "additionalFields": {
+          "description": "={{ $fromAI('Description', 'Optional longer description of the event', 'string') }}",
+          "summary": "={{ $fromAI('Summary', 'Short title of the event', 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        176
+      ],
+      "id": "aabd47cb-9f4c-49d9-9f01-e303ad299058",
+      "name": "Create an event in Calendar",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to search Flying Colors Academy's knowledge base for information about the academy — including class timings, schedules, fees, admissions, courses offered, location, contact details, policies, and frequently asked questions. Call this whenever a user asks anything specific about FCA that isn't already known from the conversation. Do not use this for general web facts (use Wikipedia) or live/current info (use SerpAPI).",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "fca",
+          "mode": "list",
+          "cachedResultName": "fca"
+        },
+        "options": {
+          "pineconeNamespace": "FAQs"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        176
+      ],
+      "id": "014aa2b1-01c1-4d0c-bb19-1e7d9a56ad44",
+      "name": "Pinecone Vector Store",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "pineconeApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Pinecone account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-2"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        688,
+        384
+      ],
+      "id": "3417e14c-7228-4825-a912-9b38fe09ff97",
+      "name": "Embeddings Google Gemini",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Gemini Acct 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "q": "={{ $fromAI('Search_Query__q_', ``, 'string') }}",
+        "location": "={{ $fromAI('Location__location_', ``, 'string') }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApiTool",
+      "typeVersion": 1,
+      "position": [
+        992,
+        176
+      ],
+      "id": "2ea2b54c-d6bb-4696-b1fe-2f96da3c7020",
+      "name": "Google search in SerpApi",
+      "credentials": {
+        "serpApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "SerpApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "delete_contact",
+        "description": "Call this tool to delete any contact but after confirmation in slack ",
+        "workflowId": {
+          "__rl": true,
+          "value": "PZrZCbcJRr8oW9uv",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/PZrZCbcJRr8oW9uv",
+          "cachedResultName": "MCP Destructive Action Approval"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "delete_contact",
+            "description": "={{ 'Delete Google Contact ' + $fromAI('Contact_ID', 'The Google Contact resource ID to delete, found via Get_many_contacts first', 'string') }}",
+            "contactId": "={{ $fromAI('Contact_ID', 'The Google Contact resource ID to delete, found via Get_many_contacts first', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "contactId",
+              "displayName": "contactId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "calendarId",
+              "displayName": "calendarId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        320
+      ],
+      "id": "7cf06578-ce28-4325-86ed-8636920fe96d",
+      "name": "Delete a Contact (requires approval)",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "name": "delete_gmail_message",
+        "description": "Call this tool to delete any email in Gmail but after confirmation from user on slack",
+        "workflowId": {
+          "__rl": true,
+          "value": "PZrZCbcJRr8oW9uv",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/PZrZCbcJRr8oW9uv",
+          "cachedResultName": "MCP Destructive Action Approval"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "delete_gmail_message",
+            "description": "={{ 'Delete Gmail message ' + $fromAI('Message_ID', '', 'string') }}",
+            "messageId": "={{ $fromAI('Message_ID', '', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "contactId",
+              "displayName": "contactId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "calendarId",
+              "displayName": "calendarId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        320
+      ],
+      "id": "b2fdbd98-037b-4450-a24b-765fa40c5ab1",
+      "name": "Delete a message in Gmail (requires approval)",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "name": "delete_calender_events",
+        "description": "Call this tool to delete any event but after confirmation from user on slack",
+        "workflowId": {
+          "__rl": true,
+          "value": "https://hurairah123.app.n8n.cloud/workflow/PZrZCbcJRr8oW9uv?projectId=S1xaR7v1JLoSCqPx&uiContext=workflow_list",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/https:%2F%2Fhurairah123.app.n8n.cloud%2Fworkflow%2FPZrZCbcJRr8oW9uv%3FprojectId=S1xaR7v1JLoSCqPx&uiContext=workflow_list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "delete_calendar_event",
+            "description": "={{ 'Delete calendar event ' + $fromAI('Event_ID', 'The calendar event ID to delete', 'string') }}",
+            "calendarId": "={{ $fromAI('Calendar_ID', 'The calendar the event belongs to, usually \"primary\"', 'string', 'primary') }}",
+            "eventId": "={{ $fromAI('Event_ID', 'The calendar event ID to delete', 'string') }}"
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        384
+      ],
+      "id": "e0d95a84-a9e3-4f3f-9c46-1b2589959432",
+      "name": "Delete an event in Calendar (requires approval)",
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a contact in Google Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a Contact (requires approval)": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Contact_Name": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_many_contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a message in Gmail (requires approval)": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event in Calendar (requires approval)": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ],
+      "main": [
+        []
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google search in SerpApi": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9f84a6c7-7b34-4cd0-8361-b96c30773fca",
+  "meta": {
+    "instanceId": "REPLACE_WITH_YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "urbC47IEiNNrTMyb",
+  "tags": []
+}

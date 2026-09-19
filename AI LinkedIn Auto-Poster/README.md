@@ -176,7 +176,7 @@ Then:
 ## Author
 
 **Muhammad Nadeem** — AI Automation Consultant / Workflow Engineer
-GitHub: `<your-username>` · LinkedIn: `<your-profile-url>`
+GitHub: `https://github.com/Kashan474` · LinkedIn: `https://www.linkedin.com/in/muhammad-nadeem-38496b10a/`
 
 ## License
 

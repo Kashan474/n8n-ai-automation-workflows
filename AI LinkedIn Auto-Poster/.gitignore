@@ -1,0 +1,14 @@
+# Secrets / local config
+.env
+.env.*
+*.pem
+*credentials*.json
+
+# Your own credentialed n8n exports (never commit these)
+private/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

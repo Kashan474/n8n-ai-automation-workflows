@@ -1,89 +1,115 @@
-# n8n AI Automation Workflows
+# Pinecone RAG Chatbot with Gemini Embeddings (n8n)
 
-A collection of production-style **AI automation projects built with [n8n](https://n8n.io)**: WhatsApp assistants, email automation, multi-tool MCP agents, content generation and social media posting. Each folder is a self-contained project with an importable workflow, documentation and setup steps.
+An [n8n](https://n8n.io) workflow that builds a **document-grounded chatbot** in two steps. First, upload a PDF through a web form. It is embedded with **Google Gemini** and stored in a **Pinecone** vector index. Then chat with a Gemini-powered Question & Answer chain that retrieves the most relevant chunks from that index and answers only from them.
 
-![n8n](https://img.shields.io/badge/built%20with-n8n-EA4B71?logo=n8n&logoColor=white)
-![Google Gemini](https://img.shields.io/badge/LLM-Google%20Gemini-4285F4?logo=googlegemini&logoColor=white)
-![AI Agents](https://img.shields.io/badge/focus-AI%20Agents-8A2BE2)
-![Status](https://img.shields.io/badge/status-actively%20maintained-brightgreen)
+Built for **Flying Colors Academy (FCA)** to answer FAQ-style questions from its documents, but it works for any PDF knowledge base (policies, prospectuses, manuals, datesheets).
+
+![Workflow overview](docs/workflow-overview.jpg)
 
 ---
 
-## Projects
+## How it works
 
-| # | Project | What it does | Key tools | Folder |
-|---|---|---|---|---|
-| 1 | **FCA Inquiry Email Automation** | Turns a website inquiry form into instant, personalised email replies. Gemini classifies each message (Admission / Query / Fallback), AI agents answer from an FAQ Google Sheet, and unclear messages are escalated to an admin | n8n AI Agents, Text Classifier, Gemini, Google Sheets, Gmail | [`n8n-fca-inquiry-email-automation`](n8n-fca-inquiry-email-automation) |
-| 2 | **Aria – WhatsApp Multi-Agent Assistant** | AI assistant for Flying Color Academy on WhatsApp that answers parent and student questions from an FAQ knowledge base, with session memory and fallback handling | WhatsApp Cloud API, n8n AI Agent, Google Sheets | [`aria-whatsapp-multi-agent`](aria-whatsapp-multi-agent) |
-| 3 | **MCP Agents** | n8n MCP Server and Client workflows that expose many tools (calculator, Wikipedia, Gmail, Google Contacts, web search, vector-store FAQ retrieval) to a single AI agent | n8n MCP Server/Client, Gemini, Pinecone, SerpApi, Gmail | [`MCP-agents`](MCP-agents) |
-| 4 | **AI LinkedIn Auto-Poster** | Generates LinkedIn posts with AI and publishes them automatically | n8n, LLM, LinkedIn | [`AI LinkedIn Auto-Poster`](AI%20LinkedIn%20Auto-Poster) |
-| 5 | **Nano Banana Pro Image Generator** | Automated prompt processing and API-driven image generation for content creation, storytelling, social media and thumbnails | n8n, Banana Pro API | [`nano_banana_pro_image_generator`](nano_banana_pro_image_generator) |
+The workflow has two independent flows on one canvas.
+
+```mermaid
+flowchart TB
+    subgraph Ingestion["1 · Ingestion (run when you add documents)"]
+        A[On form submission<br/>PDF upload] --> B[Pinecone Vector Store<br/>insert]
+        C[Default Data Loader<br/>binary PDF] -.-> B
+        D[Embeddings Google Gemini<br/>gemini-embedding-2] -.-> B
+    end
+    subgraph Chat["2 · Chat (run every time someone asks)"]
+        E[When chat message received] --> F[Question and Answer Chain]
+        G[Google Gemini Chat Model<br/>gemini-3.5-flash] -.-> F
+        H[Vector Store Retriever] -.-> F
+        I[Pinecone Vector Store1<br/>retrieve] -.-> H
+        J[Embeddings Google Gemini2<br/>gemini-embedding-2] -.-> I
+    end
+    B --> P[(Pinecone index: fca<br/>namespace: FAQs)]
+    P --> I
+```
+
+| Flow | Steps |
+|---|---|
+| **1. Ingestion** | Upload a PDF in the form → the Default Data Loader reads the binary file → Gemini creates embeddings → chunks are inserted into the Pinecone index |
+| **2. Chat** | User sends a message in the n8n chat → the question is embedded → Pinecone returns the closest chunks → Gemini writes an answer using only that context |
+
+## Node reference
+
+| Node | Type | Purpose |
+|---|---|---|
+| On form submission | Form Trigger | Upload form with a single file field |
+| Default Data Loader | Default Data Loader | Reads the uploaded file as **binary → PDF** |
+| Embeddings Google Gemini | Embeddings Google Gemini | Converts document chunks to vectors (`gemini-embedding-2`) |
+| Pinecone Vector Store | Pinecone Vector Store | **Insert** mode into index `fca`, namespace `FAQs` |
+| When chat message received | Chat Trigger | Chat interface for asking questions |
+| Question and Answer Chain | Retrieval Q&A Chain | Combines retrieved context with the question |
+| Google Gemini Chat Model | Google Gemini Chat Model | Answer-generating LLM (`gemini-3.5-flash`) |
+| Vector Store Retriever | Vector Store Retriever | Fetches relevant chunks for the chain |
+| Pinecone Vector Store1 | Pinecone Vector Store | Read side of the same index and namespace |
+| Embeddings Google Gemini2 | Embeddings Google Gemini | Embeds the user's question (`gemini-embedding-2`) |
+
+### System prompt (Question and Answer Chain)
+
+```text
+You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+----------------
+Context: {context}
+```
+
+## Prerequisites
+
+- An n8n instance (n8n Cloud or self-hosted) with the AI/LangChain nodes
+- A [Google Gemini API key](https://aistudio.google.com/apikey)
+- A [Pinecone](https://www.pinecone.io) account and API key
+- A Pinecone index (the workflow expects one named `fca`) whose **dimension matches the embedding model's output**
+
+## Setup
+
+1. **Create the Pinecone index** named `fca` (or choose your own name and update both Pinecone nodes). Set its dimension to match the output of `gemini-embedding-2`.
+2. **Import the workflow**: in n8n go to *Workflows → Import from File* and select [`workflows/pinecone-vector-store-gemini-embedding.json`](workflows/pinecone-vector-store-gemini-embedding.json).
+3. **Connect credentials** (they are not included in the export):
+
+   | Node(s) | Credential |
+   |---|---|
+   | Embeddings Google Gemini, Embeddings Google Gemini2, Google Gemini Chat Model | Google Gemini (PaLM) API |
+   | Pinecone Vector Store, Pinecone Vector Store1 | Pinecone API |
+
+4. **Check the Pinecone nodes**: both must use the **same index and namespace** (`fca` / `FAQs` by default).
+5. **Ingest a document**: run the form trigger, upload a PDF and wait for the run to finish.
+6. **Chat**: open the chat trigger (*Open chat*) and ask a question about the document.
+
+## Important notes
+
+- **Use the same embedding model for ingestion and chat.** Vectors from different models are not comparable, so both embedding nodes use `gemini-embedding-2`. If you change one, re-ingest your documents.
+- **Data Loader type must be Binary.** If it is left on JSON, the PDF text is never extracted and the chatbot replies that it has no information.
+- **PDF only.** The loader is set to PDF. For DOCX, TXT or CSV, change the loader type.
+- **Answers are only as good as the ingested documents.** Upload clean, text-based PDFs (scanned images need OCR first).
+
+## Ideas for improvement
+
+- Add a **Text Splitter** (for example Recursive Character) to the Default Data Loader to control chunk size and overlap.
+- Add **Simple/Redis Memory** to the Q&A flow for follow-up questions. Note that the Retrieval Q&A chain has no memory by default.
+- Replace the Chat Trigger with WhatsApp, Slack or Telegram triggers to serve the same knowledge base on other channels.
+- Add a metadata field (document name, date) so answers can cite their source.
+
+## Related projects
+
+The same Pinecone index (`fca`, namespace `FAQs`) can be queried as a retrieval tool by an AI agent. See the [`MCP-agents`](../MCP-agents) project.
 
 ## Repository structure
 
 ```text
-n8n-ai-automation-workflows/
-├── AI LinkedIn Auto-Poster/
-├── MCP-agents/
-├── aria-whatsapp-multi-agent/
-├── n8n-fca-inquiry-email-automation/
-├── nano_banana_pro_image_generator/
-└── README.md
+.
+├── README.md
+├── docs/
+│   └── workflow-overview.jpg
+└── workflows/
+    └── pinecone-vector-store-gemini-embedding.json
 ```
 
-Each project folder contains its own README with a workflow diagram, node-by-node explanation and setup guide, plus the exported workflow `.json`.
+## Security
 
-## Quick start: run any workflow
-
-1. **Get n8n** – use [n8n Cloud](https://n8n.io/cloud/) or self-host (Docker, Railway, etc.).
-2. **Import** – open the project folder, download the workflow `.json`, then in n8n choose *Workflows → Import from File*.
-3. **Connect credentials** – credentials are *not* included in the exports. Create your own in n8n (see the table below) and attach them to the nodes marked with a warning icon.
-4. **Fill in placeholders** – replace values such as `YOUR_GOOGLE_SHEET_ID`, `admin@example.com` or phone-number IDs with your own.
-5. **Test, then activate** – run the workflow manually with sample data before switching it to *Active*.
-
-### Credentials used across projects
-
-| Service | n8n credential type | Used in |
-|---|---|---|
-| Google Gemini | Google Gemini (PaLM) API | Inquiry Email, MCP Agents, Aria |
-| Google Sheets | Google Sheets OAuth2 | Inquiry Email, Aria, MCP Agents |
-| Gmail | Gmail OAuth2 | Inquiry Email, MCP Agents |
-| WhatsApp Business | WhatsApp Cloud API / OAuth | Aria |
-| Pinecone | Pinecone API | MCP Agents |
-| SerpApi | SerpApi | MCP Agents |
-| LinkedIn | LinkedIn OAuth2 | LinkedIn Auto-Poster |
-
-> Check each project's own README for the exact list. Some projects use additional services.
-
-## Skills and concepts demonstrated
-
-| Area | Details |
-|---|---|
-| **AI agents** | Tool-using agents, structured output parsers, intent classification, fallback routing |
-| **RAG** | FAQ grounding with Google Sheets and Pinecone vector search |
-| **MCP** | Building n8n MCP servers and clients that expose tools to agents |
-| **Messaging** | WhatsApp Cloud API and Gmail automation |
-| **Integrations** | Google Workspace, Pinecone, SerpApi, LinkedIn, image-generation APIs |
-| **Reliability** | Human-in-the-loop escalation, session memory, prompt guardrails against invented answers |
-
-## Security notes
-
-- Exported workflows have credentials, webhook IDs and personal email addresses removed or replaced with placeholders.
-- Never commit API keys, tokens or `.env` files. If you fork this repo, keep your own secrets in n8n credentials.
-- Review AI-generated output (emails, posts, replies) before pointing a workflow at real customers.
-
-## Contributing and feedback
-
-Found a bug or have an idea? Open an [issue](../../issues) or submit a pull request. Suggestions for new automations are welcome.
-
-## Connect
-
-- GitHub: [@Kashan474](https://github.com/Kashan474)
-<!-- Add your links below, then delete this comment
-- LinkedIn: [your-name](https://www.linkedin.com/in/your-profile)
-- Upwork: [your profile](https://www.upwork.com/freelancers/your-profile)
--->
-
-## License
-
-Add a license (for example [MIT](https://choosealicense.com/licenses/mit/)) via *Add file → Create new file → `LICENSE`* on GitHub.
+Credentials, webhook IDs and instance identifiers have been removed from the exported JSON. Re-attach your own credentials after importing, and never commit API keys.

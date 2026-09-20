@@ -1,0 +1,650 @@
+{
+  "name": "Flying Color Academy - Gmail Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Flying Color Academy - Inquiry Form",
+        "formDescription": "Tell us about your child's grade and curriculum to get started.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Grade",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Curriculum",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Message",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ccdd8b0f-9367-4dde-81ac-08d3e222c104",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89338a13-5bd5-4dd9-98c4-972d43afa7fd",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.Name }}"
+            },
+            {
+              "id": "416c473b-7388-418d-ba80-7ecf1321fe23",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.Email }}"
+            },
+            {
+              "id": "01bda98c-6ed6-4d54-a7d6-9abaa0bf7c14",
+              "name": "grade",
+              "type": "string",
+              "value": "={{ $json.Grade }}"
+            },
+            {
+              "id": "9101eae0-b741-4bd0-9cd3-920f8f974278",
+              "name": "curriculum",
+              "type": "string",
+              "value": "={{ $json.Curriculum }}"
+            },
+            {
+              "id": "5fd72ac2-246c-40a1-bdb8-0e2465d12a09",
+              "name": "query",
+              "type": "string",
+              "value": "={{ $json.Message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f7140f3c-43c9-446a-b039-1d848b769d2f",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.query }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Admission",
+              "description": "User wants to enroll, register, ask about the admission process, fees, or take admission for their child at Flying Color Academy."
+            },
+            {
+              "category": "Query",
+              "description": "User is asking a general question or wants information, not specifically about enrolling or admission."
+            },
+            {
+              "category": "Fallback",
+              "description": "Message is too vague, greeting only, empty, irrelevant, or does not clearly match admission or general query. Examples: Hello, Hi, OK, Thanks, Test"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an intent classifier for a tuition academy inquiry form.\nClassify the user message into exactly one of three categories:\nAdmission, Query, or Fallback.\nIf the message is a greeting, too short, vague, or does not relate\nto education or the academy, always classify it as Fallback.\nNever force a message into Admission or Query if it does not clearly belong there."
+        }
+      },
+      "id": "b30d7378-3a35-4137-a4a0-0bf7490f214c",
+      "name": "Intent Classifier",
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "d1ba424e-e26f-485e-a410-5548eb7dfc00",
+      "name": "Gemini for Classifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -336,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a warm and professional admissions assistant for Flying Color Academy, a tuition institute in Pakistan serving Grade 3 to Grade 10 students across Oxford, Cambridge, Federal Board, and Government Board curricula.\n\nA parent or student has submitted an admission inquiry. Your job is to:\n1. Use the Flying_Color_Academy_FAQ tool to look up accurate details about the admission process, fee structure, available grades, and curricula before composing your reply.\n2. Write a warm, personalised welcome email to {{ $json.name }} about the {{ $json.curriculum }} program for Grade {{ $json.grade }}.\n3. Include accurate fee or process details retrieved from the FAQ tool.\n4. Mention next steps such as a free assessment or counselling call.\n\nSTRICT OUTPUT RULES:\n- Return subject and message as two separate structured fields only.\n- Write the message field as HTML using <p>, <strong>, and <br> tags only.\n- Start with <p>Dear {{ $json.name }},</p>\n- Use 3 to 4 paragraphs each wrapped in <p></p> tags.\n- End with a warm sign-off: <p>Warm regards,<br><strong>Flying Color Academy Team</strong></p>\n- Do NOT include <html> <head> <body> or <style> tags.\n- Do NOT repeat the subject inside the message body.\n- Do NOT invent any fee amounts, timings, or details not found in the FAQ tool."
+        }
+      },
+      "id": "test-node-6",
+      "name": "Admission Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a helpful and knowledgeable assistant for Flying Color Academy, a tuition institute in Pakistan serving Grade 3 to Grade 10 students across Oxford, Cambridge, Federal Board, and Government Board curricula.\n\nA parent or student has sent a general inquiry. Your job is to:\n1. Use the Flying_Color_Academy_FAQ tool FIRST to find the accurate answer before composing any reply.\n2. Write a clear, friendly, and helpful reply addressing {{ $('Edit Fields').item.json.name }}'s specific question.\n3. If the FAQ tool does not contain the answer, honestly say the team will follow up shortly — do not guess or invent information.\n4. End by inviting them to ask further questions or book a free consultation.\n\nSTRICT OUTPUT RULES:\n- Return subject and message as two separate structured fields only.\n- Write the message field as HTML using <p>, <strong>, and <br> tags only.\n- Start with <p>Dear {{ $('Edit Fields').item.json.name }},</p>\n- Use 3 to 4 paragraphs each wrapped in <p></p> tags.\n- End with a warm sign-off: <p>Warm regards,<br><strong>Flying Color Academy Team</strong></p>\n- Do NOT include <html> <head> <body> or <style> tags.\n- Do NOT repeat the subject inside the message body.\n- Do NOT invent any details not found in the FAQ tool."
+        }
+      },
+      "id": "4a5a5a6e-70d5-4695-87bb-29ae8e035516",
+      "name": "Query Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        0,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "6fc20059-9572-450f-84f8-5b7b439d9211",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "id": "e09379af-c60c-4f09-8cd2-be31cb80d11a",
+      "name": "Google Gemini Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"A warm personalized email subject line for the admission inquiry. Under 10 words. No punctuation at end. Example: Welcome to Flying Color Academy Ayesha\"\n    },\n    \"message\": {\n      \"type\": \"string\",\n      \"description\": \"A fully formatted HTML email body. Use these HTML tags only: <p> for each paragraph, <strong> for bold emphasis, <br> for line breaks. Structure: start with <p>Dear [name],</p> then 2 to 3 body paragraphs each wrapped in <p></p> then a sign-off paragraph. Do NOT include <html> <head> <body> or <style> tags. Do NOT repeat the subject line inside the message. Do NOT use plain text. Every sentence must be inside an HTML tag.\"\n    }\n  },\n  \"required\": [\"subject\", \"message\"]\n}"
+      },
+      "id": "cd493a0a-ba98-49ce-8e8e-f169ca9c2692",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"A warm helpful email subject line responding to the general query. Under 10 words. No punctuation at end. Example: Your Question About Our Cambridge Curriculum\"\n    },\n    \"message\": {\n      \"type\": \"string\",\n      \"description\": \"A fully formatted HTML email body. Use these HTML tags only: <p> for each paragraph, <strong> for bold emphasis, <br> for line breaks. Structure: start with <p>Dear [name],</p> then 2 to 3 body paragraphs each wrapped in <p></p> then a sign-off paragraph. Do NOT include <html> <head> <body> or <style> tags. Do NOT repeat the subject line inside the message. Do NOT use plain text. Every sentence must be inside an HTML tag.\"\n    }\n  },\n  \"required\": [\"subject\", \"message\"]\n}"
+      },
+      "id": "7d65768b-40b2-42ff-afe2-b976f7082f40",
+      "name": "Structured Output Parser1",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Advanced FAQs"
+        },
+        "options": {}
+      },
+      "id": "125eec01-9bc5-4728-9742-e1a095b70562",
+      "name": "Flying_Color_Academy_FAQ",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        64,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Advanced FAQs"
+        },
+        "options": {}
+      },
+      "id": "525ab3e7-9c39-4796-923c-28e44c561e50",
+      "name": "Flying_Color_Academy_FAQ1",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        64,
+        624
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "22ae9558-dd3a-46f5-93da-8918cecbaa49",
+      "name": "Unrecognised Intent",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        64,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g3",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $(\"Edit Fields\").item.json.email }}"
+            },
+            {
+              "id": "g1",
+              "name": "subject",
+              "type": "string",
+              "value": "={{ $json.output.subject }}"
+            },
+            {
+              "id": "g2",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.output.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0c25384-0f17-4982-991d-7dcd79273a1e",
+      "name": "Welcome Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "94a8edbe-e86c-4aa0-90e3-232a9bb4251e",
+              "name": "subject",
+              "type": "string",
+              "value": "={{ $json.output.subject }}"
+            },
+            {
+              "id": "h1",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.output.message }}"
+            },
+            {
+              "id": "h2",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $('Edit Fields').item.json.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "af0eba35-e58f-4af5-8c81-791069969dcd",
+      "name": "Message a model",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "7bfa7aba-2cb9-44f6-b18d-27c7c20d03f6",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b3ec5b08-8519-4f06-85fe-fb47497b5896",
+      "name": "Send a message1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb1",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $('Edit Fields').item.json.email }}"
+            },
+            {
+              "id": "fb2",
+              "name": "subject",
+              "type": "string",
+              "value": "New Unclassified Inquiry Received"
+            },
+            {
+              "id": "fb3",
+              "name": "message",
+              "type": "string",
+              "value": "=<p>A new inquiry was submitted but could not be classified automatically.</p><p><strong>Name:</strong> {{ $('Edit Fields').item.json.name }}<br><strong>Email:</strong> {{ $('Edit Fields').item.json.email }}<br><strong>Grade:</strong> {{ $('Edit Fields').item.json.grade }}<br><strong>Curriculum:</strong> {{ $('Edit Fields').item.json.curriculum }}<br><strong>Message:</strong> {{ $('Edit Fields').item.json.query }}</p><p>Please follow up with this person manually.</p><p>Regards,<br><strong>Flying Color Academy Automation</strong></p>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6dab7f98-50f5-440e-bea6-5c4d81b88997",
+      "name": "Prepare Fallback Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "admin@example.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "dc17b1f6-83d3-432a-84b1-a2cb265f7688",
+      "name": "Alert Admin",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        800
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Intent Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Classifier": {
+      "main": [
+        [
+          {
+            "node": "Admission Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Query Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unrecognised Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admission Agent": {
+      "main": [
+        [
+          {
+            "node": "Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Agent": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Admission Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Query Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Admission Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Query Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini for Classifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Intent Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flying_Color_Academy_FAQ": {
+      "ai_tool": [
+        [
+          {
+            "node": "Admission Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flying_Color_Academy_FAQ1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Query Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unrecognised Intent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Fallback Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Fallback Alert": {
+      "main": [
+        [
+          {
+            "node": "Alert Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

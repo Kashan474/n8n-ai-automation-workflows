@@ -1,0 +1,512 @@
+{
+  "name": "AI Social Media Auto-Poster (LinkedIn, Facebook, Instagram)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Social Media Post Generator & Uploader",
+        "formDescription": "Fill out these fields and you will have a full social media post ready to go in a minute. ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic of Post",
+              "placeholder": "Robot",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Audience",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "a3438677-39cd-4ccb-99a6-11a4f0085791",
+      "name": "On form submission",
+      "webhookId": "YOUR_FORM_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create social media content for the following brief.\n\nTopic: {{ $json['Topic of Post'].trim() }}\nTarget Audience: {{ $json['Target Audience'].trim() }}\n\nFirst research the topic with the Tavily tool, then write the posts and image prompts.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a senior social media strategist, copywriter and art director.\n\nTASK\nFrom the user's brief (topic and target audience), produce three platform-specific posts and two image-generation prompts.\n\nRESEARCH\nCall the Tavily search tool once, or twice at most, to find current and accurate facts, statistics or trends about the topic before writing. Use only facts you actually found. Never invent statistics, quotes or links. If the search returns nothing useful, write evergreen content without specific figures.\n\nPLATFORM RULES\n1. LinkedIn: professional, insight-driven, 120-220 words. Strong first line (hook), short paragraphs with line breaks, one clear takeaway, a call to action at the end, and 3-5 relevant hashtags.\n2. Facebook: conversational and friendly, 60-120 words. Ask an engaging question or invite comments, include a call to action, and 2-3 hashtags.\n3. Instagram: punchy and emotional, max 150 words. Start with a scroll-stopping hook, use emojis naturally (not excessively), put the call to action near the end, then 8-12 relevant hashtags on a separate final line.\n\nSTYLE\n- Speak directly to the target audience in a tone that fits them.\n- No clickbait, no false claims, no offensive content.\n- Do not use markdown formatting such as ** or ## (social platforms do not render it).\n\nIMAGE PROMPTS\n- linkedin_facebook_image_prompt: a clean, professional LANDSCAPE (3:2) composition for LinkedIn and Facebook feeds.\n- instagram_image_prompt: an eye-catching, vibrant SQUARE (1:1) composition with a bold focal point.\n- Each prompt: 60-100 words describing subject, setting, composition, lighting, color palette and mood, in a modern polished illustration or photo-realistic style.\n- Leave clean negative space so the image works as a social post.\n- Do NOT include any text, words, letters, numbers, logos, watermarks or real people's faces (AI-rendered text is unreliable).\n- Do NOT reference real celebrities, copyrighted characters or trademarked brands.\n\nOUTPUT\nReturn only the structured JSON with exactly these keys: linkedin_post, facebook_post, instagram_caption, linkedin_facebook_image_prompt, instagram_image_prompt.",
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -144,
+        112
+      ],
+      "id": "f06f992c-78a9-489a-9878-e976e3b5addf",
+      "name": "Generate Posts & Image Prompts",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        352
+      ],
+      "id": "8722f625-d0be-415d-b674-c6a32483f4fe",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', `Concise web search query (max 12 words) to find recent facts, statistics or news about the post topic`, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        352
+      ],
+      "id": "c0a10516-0453-4178-97c7-029664b81ee8",
+      "name": "Tavily Search",
+      "credentials": {
+        "tavilyApi": {
+          "id": "YOUR_TAVILY_CREDENTIAL_ID",
+          "name": "YOUR_TAVILY_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"linkedin_post\": \"Full LinkedIn post text with line breaks and 3-5 hashtags\",\n  \"facebook_post\": \"Full Facebook post text with 2-3 hashtags\",\n  \"instagram_caption\": \"Instagram caption with emojis and 8-12 hashtags\",\n  \"linkedin_facebook_image_prompt\": \"Detailed 60-100 word landscape image prompt, no text in image\",\n  \"instagram_image_prompt\": \"Detailed 60-100 word square image prompt, no text in image\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        352
+      ],
+      "id": "afacf068-1086-46a3-9503-3c151e2f9bcb",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-image-1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-IMAGE-1-MINI"
+        },
+        "prompt": "={{ $('Generate Posts & Image Prompts').first().json.output.linkedin_facebook_image_prompt }}",
+        "options": {
+          "quality": "medium",
+          "size": "1536x1024"
+        }
+      },
+      "id": "b20b58b1-c587-4b6a-96ba-16d772ddd506",
+      "name": "Generate Landscape Image",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        16
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-image-1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-IMAGE-1-MINI"
+        },
+        "prompt": "={{ $('Generate Posts & Image Prompts').first().json.output.instagram_image_prompt }}",
+        "options": {
+          "quality": "medium",
+          "size": "1024x1024",
+          "outputFormat": "jpeg"
+        }
+      },
+      "id": "c35601c6-1ead-45e1-a653-14d3fa9fbbfe",
+      "name": "Generate Square Image",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "person": "YOUR_LINKEDIN_PERSON_ID",
+        "text": "={{ $('Generate Posts & Image Prompts').first().json.output.linkedin_post }}",
+        "shareMediaCategory": "IMAGE",
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "title": "={{ $('On form submission').first().json['Topic of Post'] }}",
+          "visibility": "PUBLIC"
+        }
+      },
+      "id": "c31c70fe-33d8-4a1b-9bb8-5144bb9226e9",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -80
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "YOUR_LINKEDIN_CREDENTIAL_ID",
+          "name": "YOUR_LINKEDIN_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "YOUR_FACEBOOK_PAGE_ID",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "source:data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $('Generate Posts & Image Prompts').first().json.output.facebook_post }}"
+              },
+              {
+                "name": "published",
+                "value": "true"
+              }
+            ]
+          }
+        }
+      },
+      "id": "133e70c5-de85-47ef-bf8f-8a27fd848d35",
+      "name": "Post to Facebook",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        480,
+        112
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_FACEBOOK_PAGE_CREDENTIAL_ID",
+          "name": "YOUR_FACEBOOK_PAGE_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.imgbb.com/1/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiration",
+              "value": "3600"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "1cd16121-d7d8-4800-96fa-01c4c7c278cb",
+      "name": "Upload Image to imgbb",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        304
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "YOUR_IMGBB_CREDENTIAL_ID",
+          "name": "YOUR_IMGBB_CREDENTIAL_NAME"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "YOUR_INSTAGRAM_BUSINESS_ACCOUNT_ID",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $json.data.url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $('Generate Posts & Image Prompts').first().json.output.instagram_caption }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "c66f428b-a3a6-4700-8aa2-cfae1653096e",
+      "name": "Create Instagram Container",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        704,
+        304
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_INSTAGRAM_CREDENTIAL_ID",
+          "name": "YOUR_INSTAGRAM_CREDENTIAL_NAME"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "YOUR_INSTAGRAM_BUSINESS_ACCOUNT_ID",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "da626c88-f3b2-4a68-ae8b-da131fe8cb7c",
+      "name": "Publish to Instagram",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        928,
+        304
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_INSTAGRAM_CREDENTIAL_ID",
+          "name": "YOUR_INSTAGRAM_CREDENTIAL_NAME"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "width": 640,
+        "height": 300,
+        "color": 7,
+        "content": "## AI Social Media Auto-Poster\nForm (topic + audience) -> one AI agent researches via Tavily and returns 3 posts + 2 image prompts -> 2 images generated -> published to **LinkedIn, Facebook, Instagram**.\n\n**Credentials needed:** OpenAI, Tavily, LinkedIn OAuth2, Facebook Graph (Page), Facebook Graph (Instagram), and a **Query Auth** credential for imgbb (name: `key`, value: your imgbb API key).\n\n**Notes**\n- Instagram needs a public JPEG URL, so the square image is hosted on imgbb (auto-deletes after 1h).\n- LinkedIn/Facebook posts are not retried to avoid duplicate posts.\n- Production form URL is public: add Basic Auth on the form trigger and set an Error Workflow in workflow settings.\n- Replace the Page / Instagram / LinkedIn person IDs with your own."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -420
+      ],
+      "id": "7a1d3c52-0b6e-4f1a-9c2e-5d8b1e4f6a01",
+      "name": "Workflow Overview"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Generate Posts & Image Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Posts & Image Prompts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Posts & Image Prompts",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Posts & Image Prompts",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Posts & Image Prompts": {
+      "main": [
+        [
+          {
+            "node": "Generate Landscape Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Square Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Landscape Image": {
+      "main": [
+        [
+          {
+            "node": "Post to Facebook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Square Image": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to imgbb",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to imgbb": {
+      "main": [
+        [
+          {
+            "node": "Create Instagram Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Instagram Container": {
+      "main": [
+        [
+          {
+            "node": "Publish to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "executionTimeout": 600
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": [],
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

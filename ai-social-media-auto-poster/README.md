@@ -45,3 +45,5 @@ Form -> AI Agent (OpenAI + Tavily + structured output)
 ## Requirements
 - n8n with the LangChain/AI nodes and the community Tavily node (`@tavily/n8n-nodes-tavily`).
 - Meta Graph API v23.0 access for Facebook and Instagram.
+
+![AI Social Media Auto-Poster workflow](assets/AI%20Social%20Media%20Auto-Poster.jpeg)

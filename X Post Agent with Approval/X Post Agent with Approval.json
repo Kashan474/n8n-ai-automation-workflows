@@ -1,0 +1,757 @@
+{
+  "name": "X Post Agent with Approval",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "X Post Generator",
+        "formDescription": "Enter a topic and an AI agent will research it and draft an X (Twitter) post for your approval.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "fieldType": "textarea",
+              "fieldName": "Topic",
+              "placeholder": "e.g. Latest trends in AI automation for education",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tone",
+              "fieldType": "dropdown",
+              "fieldName": "Tone",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Professional"
+                  },
+                  {
+                    "option": "Casual"
+                  },
+                  {
+                    "option": "Witty"
+                  },
+                  {
+                    "option": "Inspirational"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Generate Post",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thanks! Check your email to approve or request changes to the post."
+            }
+          }
+        }
+      },
+      "id": "bf45b0db-3874-4f4a-9143-728d6b2818ee",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        688
+      ],
+      "webhookId": "e4c46a22-bde8-498c-ae57-09c558fb3a96"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write an X (Twitter) post about the following topic.\nTopic: {{ $json.Topic }}\nTone: {{ $json.Tone || \"Professional\" }}",
+        "options": {
+          "systemMessage": "You are an expert social media writer for X (Twitter). Use the Tavily Search tool to research the topic and gather current, accurate facts. Then write ONE engaging post of at most 280 characters, including 1-3 relevant hashtags. Output ONLY the final post text, with no quotes, labels or explanations.",
+          "maxIterations": 4
+        }
+      },
+      "id": "49629358-e77d-4f3c-8b78-0afe5527caba",
+      "name": "X Post Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        576
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to search the web for current, factual information and recent news about the topic.",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', 'The web search query about the post topic') }}",
+        "options": {
+          "topic": "general",
+          "search_depth": "basic",
+          "max_results": 5
+        }
+      },
+      "id": "3e2afb5b-6ea3-408e-a384-b633beeedc0a",
+      "name": "Tavily Search",
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        360,
+        808
+      ],
+      "credentials": {
+        "tavilyApi": {
+          "id": "rcgJ8E5bej1uOfhT",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-post-field",
+              "name": "post",
+              "type": "string",
+              "value": "={{ String($json.output ?? $json.post ?? '').trim() }}"
+            },
+            {
+              "id": "set-revision",
+              "name": "revision",
+              "type": "number",
+              "value": "={{ $runIndex }}"
+            },
+            {
+              "id": "set-reviewer",
+              "name": "reviewerEmail",
+              "type": "string",
+              "value": "kashan474@gmail.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0821d6de-4e34-40e8-8126-8e2d65157663",
+      "name": "Set Post",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        576,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "={{ $json.reviewerEmail }}",
+        "subject": "=Approve X Post ({{ $json.length }}/280 chars)",
+        "message": "=Drafted X post:\n\n{{ $json.post }}\n\nClick the button below to approve it or request changes.",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Request changes"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Feedback",
+              "fieldType": "textarea",
+              "placeholder": "Only needed if you request changes"
+            }
+          ]
+        },
+        "options": {
+          "messageButtonLabel": "Review post",
+          "responseFormTitle": "Review X Post",
+          "responseFormDescription": "Choose Approve to publish, or Request changes and describe what to fix.",
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 24
+            }
+          },
+          "appendAttribution": false
+        }
+      },
+      "id": "3f7e0b57-c380-44ef-aebc-9f18ef805bcc",
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        144
+      ],
+      "webhookId": "c531344f-ba2a-4e52-b9c4-0a2de4999647",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QPH4iJLi6nWgkQAR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $(\"Set Post\").last().json.post }}",
+        "additionalFields": {}
+      },
+      "id": "9bf556b0-a78e-4d90-98be-e836c8d9d037",
+      "name": "X Post",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "Xmpj821s72EjTIOC",
+          "name": "X account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Original X post:\n{{ $('Set Post').last().json.post }}\n\nFeedback to apply:\n{{ $json.feedback || $json.data?.Feedback || 'Improve clarity and engagement while keeping the same meaning.' }}\n\nRewrite the post applying the feedback.",
+        "options": {
+          "systemMessage": "You are an expert X (Twitter) editor. Revise the given post according to the feedback (from a human reviewer or an automatic length check). Use the Tavily Search1 tool only if extra facts are needed. Keep the post at most 280 characters and include 1-3 relevant hashtags. Output ONLY the final revised post text, with no quotes, labels or explanations.",
+          "maxIterations": 4
+        }
+      },
+      "id": "98f6c4a3-6c8a-418d-a6b2-649079c59141",
+      "name": "Revision Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1696,
+        592
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to look up current, factual information on the web if the revision requires extra facts.",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', 'The web search query needed for the revision') }}",
+        "options": {
+          "topic": "general",
+          "search_depth": "basic",
+          "max_results": 5
+        }
+      },
+      "id": "649eb3eb-684e-42af-888c-86488540f9ab",
+      "name": "Tavily Search1",
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        1832,
+        808
+      ],
+      "credentials": {
+        "tavilyApi": {
+          "id": "rcgJ8E5bej1uOfhT",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX = 280;\nconst MAX_AUTOFIX_REVISION = 4;\nconst results = [];\n\nfor (const item of $input.all()) {\n  let post = String(item.json.post ?? '').trim();\n  // Strip wrapping quotes the model sometimes adds\n  post = post.replace(/^[\"'“”‘’]+|[\"'“”‘’]+$/g, '').trim();\n\n  // Count code points (emoji-safe). X weights URLs/CJK/emoji differently,\n  // so treat this as a close approximation.\n  const length = [...post].length;\n  const empty = post.length === 0;\n  const tooLong = length > MAX;\n  const valid = !empty && !tooLong;\n  const revision = Number(item.json.revision ?? 0);\n\n  results.push({\n    json: {\n      ...item.json,\n      post,\n      length,\n      valid,\n      autoFix: !valid && revision < MAX_AUTOFIX_REVISION,\n      feedback: valid\n        ? null\n        : empty\n          ? 'The post was empty. Write a complete X post of at most 280 characters with 1-3 hashtags.'\n          : `The post is ${length} characters. Shorten it to at most ${MAX} characters, keeping 1-3 hashtags.`,\n    },\n  });\n}\n\nreturn results;"
+      },
+      "id": "b7c0a631-cd20-46c8-89db-79ca7982129a",
+      "name": "Validate Post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.valid }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "id": "0643f21f-ee34-4a61-bc23-3a0043bdbe96"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.autoFix }}",
+                    "operator": {
+                      "operation": "true",
+                      "singleValue": true,
+                      "type": "boolean"
+                    },
+                    "id": "67a481aa-de3e-44ad-aabd-b8031142cb20"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Auto-fix"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Give up"
+        }
+      },
+      "id": "bef0fac7-7a7e-4618-8b69-3771e38c0bc8",
+      "name": "Post Check",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1024,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.Decision ?? '' }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "Approve",
+                    "id": "a6d838f0-f6f2-47da-8977-8b6106d39e1b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approved"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.Decision ?? '' }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "Request changes",
+                    "id": "672f6f8d-6342-422f-b2f0-0c5a534031b9"
+                  },
+                  {
+                    "leftValue": "={{ Number($('Set Post').last().json.revision ?? 0) }}",
+                    "operator": {
+                      "operation": "lt",
+                      "type": "number"
+                    },
+                    "rightValue": 5,
+                    "id": "6af4edaa-08e8-4d1f-bf0c-c6aef1da3fcf"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Revise"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Timeout or cap reached"
+        }
+      },
+      "id": "ed1c5103-9c87-464d-a38f-5d0398ef1cdc",
+      "name": "Decision Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1472,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Set Post').last().json.reviewerEmail }}",
+        "subject": "Posted to X",
+        "emailType": "text",
+        "message": "=Your post is live:\nhttps://x.com/i/web/status/{{ $json.id }}\n\n{{ $('Set Post').last().json.post }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "f988c66d-4948-4264-af15-b08e3275e625",
+      "name": "Posted Confirmation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2048,
+        0
+      ],
+      "webhookId": "fb372ac1-2119-4380-8537-941a52a7ac26",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QPH4iJLi6nWgkQAR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Set Post').last().json.reviewerEmail }}",
+        "subject": "X post FAILED",
+        "emailType": "text",
+        "message": "=Posting to X failed: {{ $json.error?.message ?? $json.error ?? 'unknown error' }}\n\nPost text:\n{{ $('Set Post').last().json.post }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "fbae4a15-5463-439a-b67e-3a92f2958e70",
+      "name": "X Post Failed Notice",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2048,
+        192
+      ],
+      "webhookId": "45f95624-a00e-414d-a533-ea2f131f869b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QPH4iJLi6nWgkQAR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Set Post').last().json.reviewerEmail }}",
+        "subject": "X post workflow stopped",
+        "emailType": "text",
+        "message": "=Stopped.\n\n{{ $json.feedback ?? 'No decision was received in time, or the revision limit was reached.' }}\n\nLast draft:\n{{ $('Set Post').last().json.post }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d057c331-2181-454f-81ad-bf113f5a2449",
+      "name": "Notify Stopped",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        288
+      ],
+      "webhookId": "3ca03395-1a37-48c1-a756-e4ff8fa975ea",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QPH4iJLi6nWgkQAR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        232,
+        808
+      ],
+      "id": "b769359e-d54a-4db1-b6dd-4b9bf3db660e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TgaUd1e8UpsYU8ou",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1704,
+        808
+      ],
+      "id": "e906e0aa-a32a-43e7-ad62-25c0815f9001",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TgaUd1e8UpsYU8ou",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "On form submission": [
+      {
+        "json": {
+          "Topic": "Long march and protest in Islamabad, Pakistan.",
+          "Tone": "Professional",
+          "submittedAt": "2026-10-09T14:46:14.136+05:00",
+          "formMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "X Post Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X Post Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "X Post Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revision Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Search1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Revision Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Post": {
+      "main": [
+        [
+          {
+            "node": "Validate Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Post": {
+      "main": [
+        [
+          {
+            "node": "Post Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Check": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revision Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Stopped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Decision Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Router": {
+      "main": [
+        [
+          {
+            "node": "X Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revision Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Stopped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X Post": {
+      "main": [
+        [
+          {
+            "node": "Posted Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "X Post Failed Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "X Post Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Revision Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "72c53251-776e-4676-8ab1-b66b7585c275",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "efbde1ac7ab17c4264d3c0459cd271316392c186221b5eaf5585de472766ce97"
+  },
+  "nodeGroups": [],
+  "id": "jiCvD4l8kKfgJNhD",
+  "tags": []
+}

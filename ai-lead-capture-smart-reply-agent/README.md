@@ -2,7 +2,7 @@
 
 An **n8n** workflow that turns a website contact form into an automated lead pipeline. A visitor submits a question; the workflow validates it, blocks bots and spam, lets a **Gemini AI agent** answer it (with live web search), **scores the lead 0–100**, logs it to a database, **emails the visitor a branded reply** and **alerts the owner on WhatsApp** when a lead needs a personal follow-up. If the AI step ever fails, a safe fallback still captures the lead and notifies the owner.
 
-![Workflow canvas](docs/workflow-canvas.png)
+![Workflow canvas](workflow-canvas.png)
 
 ## Features
 

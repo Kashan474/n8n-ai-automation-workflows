@@ -1,7 +1,7 @@
 # Content Automation: AI Short-Form Video Pipeline (n8n)
 
 An [n8n](https://n8n.io) workflow that writes a ~30-second vertical video script, splits it into 4 scenes, generates an opening-frame image for each scene, turns each image into an 8-second video clip, and logs everything to Google Sheets.
-![Dark Workflow Automation Pipeline](assets/dark-workflow-automation-pipeline.png)
+![Dark Workflow Automation Pipeline](assets/Dark-Workflow-Automation-Pipeline.png)
 
 > **Name note:** the workflow and sheet are named "Veo3" for historical reasons. The current version generates video with **Grok Imagine** through [Kie.ai](https://kie.ai), not Veo 3.
 

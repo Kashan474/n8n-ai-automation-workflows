@@ -1,0 +1,1170 @@
+{
+  "name": "Content Automation with Veo3 - Simplified",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "09797b7a-c772-4a9e-a235-36f8d2bdc16f",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "0"
+        },
+        "options": {}
+      },
+      "id": "ee4d8957-090e-43b5-9816-3425cd82e97b",
+      "name": "Get Previous Scripts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        96
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Previous scripts (do not repeat these topics or hooks): {{ $('Get Previous Scripts').all().map(i => i.json.Script).filter(Boolean).slice(-10).join(' | ') || 'None yet' }}\n\nWrite one new short-form vertical video script (about 30 seconds) and split it into 4 scenes of about 8 seconds each.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert short-form video creator. Niche: AI and automation tips for freelancers and small business owners.\n\n1) SCRIPT: punchy and original, with a strong hook, one clear idea and a call to action. Plain spoken voiceover only (60-75 words, about 30 seconds): no timestamps, scene labels, emojis or stage directions.\n\n2) SCENES: split the script into exactly 4 sequential scenes of about 8 seconds each, keeping the hook in scene 1 and the call to action in scene 4. For each scene return:\n- beat: one short sentence describing what we see, followed by the spoken line (at most 20 words).\n- image_prompt: a vivid prompt for the opening frame covering subject, setting, lighting, camera angle and style. Keep the same characters, style and colour palette across all 4 images, vertical 9:16 composition.\n- video_prompt: an image-to-video prompt for Grok Imagine. The starting frame is supplied, so do not re-describe it. Write 2-3 sentences covering camera movement, subject action, ambient sound and the spoken line in double quotes (taken from the beat, at most 20 words). Do not mention duration, aspect ratio or art style.\n\nReturn only the requested JSON."
+        }
+      },
+      "id": "d2e07ea7-c404-465b-8e7a-af5db6ed7b39",
+      "name": "Write Script & Scenes",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        96
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"title\": \"Short catchy title\", \"hook\": \"Scroll-stopping first line\", \"script\": \"Full voiceover script (about 30 seconds)\", \"caption\": \"Social caption with hashtags\", \"scenes\": [ { \"scene\": 1, \"beat\": \"What we see and the spoken line\", \"image_prompt\": \"Opening-frame image prompt\", \"video_prompt\": \"Camera movement, action, ambience and spoken line\" }, { \"scene\": 2, \"beat\": \"...\", \"image_prompt\": \"...\", \"video_prompt\": \"...\" }, { \"scene\": 3, \"beat\": \"...\", \"image_prompt\": \"...\", \"video_prompt\": \"...\" }, { \"scene\": 4, \"beat\": \"...\", \"image_prompt\": \"...\", \"video_prompt\": \"...\" } ] }"
+      },
+      "id": "ba203020-6ddb-4d06-92c2-b41a63e1dd4c",
+      "name": "Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.8-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        336
+      ],
+      "id": "8ced17c6-a703-4a69-8304-93448830145d",
+      "name": "Gemini Model",
+      "credentials": {
+        "googlePalmApi": {
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = $input.first().json.output;\nconst runId = $now.toFormat('yyyyMMdd-HHmmss');\n\n// One item per scene, each carrying everything the later steps need\nreturn out.scenes.map(s => ({\n  json: {\n    runId,\n    key: `${runId}-${s.scene}`,\n    scene: s.scene,\n    imagePrompt: s.image_prompt,\n    videoPrompt: s.video_prompt,\n    title: out.title,\n    hook: out.hook,\n    script: out.script,\n    caption: out.caption,\n    scenes: JSON.stringify(out.scenes),\n  },\n}));"
+      },
+      "id": "abbe93e0-3bd7-4903-bc92-71e59a6d1b32",
+      "name": "Prepare Scenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Run ID": "={{ $json.runId }}",
+            "Title": "={{ $json.title }}",
+            "Hook": "={{ $json.hook }}",
+            "Script": "={{ $json.script }}",
+            "Caption": "={{ $json.caption }}",
+            "Scenes": "={{ $json.scenes }}",
+            "Timestamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [
+            "Script"
+          ],
+          "schema": [
+            {
+              "id": "Run ID",
+              "displayName": "Run ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Scenes",
+              "displayName": "Scenes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6571ff81-1224-4217-ab7b-2534ccb4fff2",
+      "name": "Save Script",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1024,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"z-image\", input: { prompt: String($json.imagePrompt).slice(0, 1000), aspect_ratio: \"9:16\" } }) }}",
+        "options": {}
+      },
+      "id": "76894e69-29e2-4978-8e35-5b310143d431",
+      "name": "Create Image Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1024,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "resume": "timeInterval",
+        "unit": "seconds"
+      },
+      "id": "4171cc52-00f1-4799-bfeb-9bcb216191eb",
+      "name": "Wait for Image",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.data.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "e2c41553-6423-4859-b712-e8d57cdafd9f",
+      "name": "Get Image Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1472,
+        128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "success",
+                    "id": "43d9a70b-6ac8-40a1-b007-878056b42485"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "notEquals",
+                      "type": "string"
+                    },
+                    "rightValue": "success",
+                    "id": "c0cc42f2-bd1c-4216-89fe-faec24078557"
+                  },
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "notEquals",
+                      "type": "string"
+                    },
+                    "rightValue": "fail",
+                    "id": "62c5b741-8785-423c-a3c1-293643cd9f90"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pending"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "fail",
+                    "id": "d53aade0-570c-4528-afa1-55ed73eef69c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "failed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a6038ebf-ac46-43b6-a2fe-75c1665ae89d",
+      "name": "Image Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1696,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_POLLS = 60; // x 5s wait = ~5 minutes\nif ($runIndex >= MAX_POLLS) {\n  const ids = $input.all().map(i => i.json.data?.taskId).join(', ');\n  throw new Error(`Image generation timed out after ${MAX_POLLS} polls. Still pending: ${ids}`);\n}\nreturn $input.all();"
+      },
+      "id": "6c54c5b3-f7e7-4012-9ac2-5e859c7f34bc",
+      "name": "Image Poll Limit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        400
+      ],
+      "notes": "Stops a stuck image task after 60 polls (~5 min)."
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SCENES_TAB_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Key": "={{ $('Prepare Scenes').item.json.key }}",
+            "Run ID": "={{ $('Prepare Scenes').item.json.runId }}",
+            "Scene": "={{ $('Prepare Scenes').item.json.scene }}",
+            "Image Prompt": "={{ $('Prepare Scenes').item.json.imagePrompt }}",
+            "Video Prompt": "={{ $('Prepare Scenes').item.json.videoPrompt }}",
+            "Video URL": "={{ 'FAILED (image): ' + ($json.data.failMsg || $json.data.failCode || 'unknown error') + ' [taskId ' + $json.data.taskId + ']' }}"
+          },
+          "matchingColumns": [
+            "Key"
+          ],
+          "schema": [
+            {
+              "id": "Key",
+              "displayName": "Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Run ID",
+              "displayName": "Run ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Scene",
+              "displayName": "Scene",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image Prompt",
+              "displayName": "Image Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Prompt",
+              "displayName": "Video Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hosted Image URL",
+              "displayName": "Hosted Image URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video URL",
+              "displayName": "Video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "cbaac02e-6730-43a3-9da3-dcb0514e20fb",
+      "name": "Log Image Failure",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1920,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kieai.redpandaai.co/api/file-url-upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fileUrl: JSON.parse($json.data.resultJson).resultUrls[0], uploadPath: \"content-automation/images\", fileName: $(\"Prepare Scenes\").item.json.key + \".png\" }) }}",
+        "options": {}
+      },
+      "id": "10fbecc0-89e8-4799-81bf-1210bd8eba9f",
+      "name": "Upload Image to Kie",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1920,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"grok-imagine-video-1-5-preview\", input: { prompt: $(\"Prepare Scenes\").item.json.videoPrompt, image_urls: [$json.data.downloadUrl], aspect_ratio: \"9:16\", resolution: \"480p\", duration: 8 } }) }}",
+        "options": {}
+      },
+      "id": "3ab262e5-fa1b-4706-931e-25336aba6b52",
+      "name": "Create Video Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2144,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "resume": "timeInterval",
+        "unit": "seconds"
+      },
+      "id": "37daf2b6-0ae7-4f85-b9c6-de65b43d16e6",
+      "name": "Wait for Video",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $json.data.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "ea9eda5a-4989-4101-8e22-98a0b9e7bcf8",
+      "name": "Get Video Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2592,
+        224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "success",
+                    "id": "44cee4f9-70cf-4b44-b81f-1b3d898149bc"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "notEquals",
+                      "type": "string"
+                    },
+                    "rightValue": "success",
+                    "id": "1421223d-1128-43c1-bbfc-cb4b80728979"
+                  },
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "notEquals",
+                      "type": "string"
+                    },
+                    "rightValue": "fail",
+                    "id": "310b7709-0cf1-4f20-ac2c-054733ba3d43"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pending"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data?.state ?? 'unknown' }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "fail",
+                    "id": "9ed8fb57-1596-4a82-a8c7-0070d9a95d76"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "failed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c471c324-5908-403d-8ec3-2bf832127b9f",
+      "name": "Video Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2816,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_POLLS = 60; // x 10s wait = ~10 minutes\nif ($runIndex >= MAX_POLLS) {\n  const ids = $input.all().map(i => i.json.data?.taskId).join(', ');\n  throw new Error(`Video generation timed out after ${MAX_POLLS} polls. Still pending: ${ids}`);\n}\nreturn $input.all();"
+      },
+      "id": "5b68119d-f541-4dbd-a9f6-9f5c485d2545",
+      "name": "Video Poll Limit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        500
+      ],
+      "notes": "Stops a stuck video task after 60 polls (~10 min)."
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SCENES_TAB_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Key": "={{ $('Prepare Scenes').item.json.key }}",
+            "Run ID": "={{ $('Prepare Scenes').item.json.runId }}",
+            "Scene": "={{ $('Prepare Scenes').item.json.scene }}",
+            "Image Prompt": "={{ $('Prepare Scenes').item.json.imagePrompt }}",
+            "Video Prompt": "={{ $('Prepare Scenes').item.json.videoPrompt }}",
+            "Video URL": "={{ $json.data.response.resultUrls[0] }}",
+            "Hosted Image URL": "={{ $('Upload Image to Kie').item.json.data.downloadUrl }}"
+          },
+          "matchingColumns": [
+            "Key"
+          ],
+          "schema": [
+            {
+              "id": "Key",
+              "displayName": "Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Run ID",
+              "displayName": "Run ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Scene",
+              "displayName": "Scene",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image Prompt",
+              "displayName": "Image Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Prompt",
+              "displayName": "Video Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hosted Image URL",
+              "displayName": "Hosted Image URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video URL",
+              "displayName": "Video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "399b1385-12a8-47fa-82bf-e18d0a10820c",
+      "name": "Save Scene",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3040,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SCENES_TAB_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Key": "={{ $('Prepare Scenes').item.json.key }}",
+            "Run ID": "={{ $('Prepare Scenes').item.json.runId }}",
+            "Scene": "={{ $('Prepare Scenes').item.json.scene }}",
+            "Image Prompt": "={{ $('Prepare Scenes').item.json.imagePrompt }}",
+            "Video Prompt": "={{ $('Prepare Scenes').item.json.videoPrompt }}",
+            "Hosted Image URL": "={{ $('Upload Image to Kie').item.json.data.downloadUrl }}",
+            "Video URL": "={{ 'FAILED (video): ' + ($json.data.failMsg || $json.data.failCode || 'unknown error') + ' [taskId ' + $json.data.taskId + ']' }}"
+          },
+          "matchingColumns": [
+            "Key"
+          ],
+          "schema": [
+            {
+              "id": "Key",
+              "displayName": "Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Run ID",
+              "displayName": "Run ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Scene",
+              "displayName": "Scene",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image Prompt",
+              "displayName": "Image Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Prompt",
+              "displayName": "Video Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hosted Image URL",
+              "displayName": "Hosted Image URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video URL",
+              "displayName": "Video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "43a318c1-78e5-4fd1-b52f-5ed5ca4d9175",
+      "name": "Log Video Failure",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3040,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Get Previous Scripts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Scripts": {
+      "main": [
+        [
+          {
+            "node": "Write Script & Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Script & Scenes": {
+      "main": [
+        [
+          {
+            "node": "Prepare Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Script & Scenes",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Write Script & Scenes",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Scenes": {
+      "main": [
+        [
+          {
+            "node": "Create Image Task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image Task": {
+      "main": [
+        [
+          {
+            "node": "Wait for Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Image": {
+      "main": [
+        [
+          {
+            "node": "Get Image Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image Result": {
+      "main": [
+        [
+          {
+            "node": "Image Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Status": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Kie",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Image Poll Limit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Image Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Poll Limit": {
+      "main": [
+        [
+          {
+            "node": "Wait for Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Kie": {
+      "main": [
+        [
+          {
+            "node": "Create Video Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video Task": {
+      "main": [
+        [
+          {
+            "node": "Wait for Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Video": {
+      "main": [
+        [
+          {
+            "node": "Get Video Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video Result": {
+      "main": [
+        [
+          {
+            "node": "Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Status": {
+      "main": [
+        [
+          {
+            "node": "Save Scene",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Video Poll Limit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Video Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Poll Limit": {
+      "main": [
+        [
+          {
+            "node": "Wait for Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}

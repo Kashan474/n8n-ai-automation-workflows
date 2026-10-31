@@ -4,7 +4,7 @@ An n8n workflow that picks one unposted news item or article from a website ever
 
 > Built as a take-home technical assessment for PlacidWay's hiring process. It is not a production deployment.
 
-![Workflow diagram](images/workflow-diagram.png)
+![Workflow diagram](images/workflow-diagram-2.png)
 
 *Diagram generated from `workflow.json`. Replace it with a real screenshot of your n8n canvas if you prefer (see "Screenshots" below).*
 

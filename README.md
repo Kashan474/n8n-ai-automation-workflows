@@ -39,7 +39,7 @@ Schedule (daily 09:00)
 
 **Tools:** n8n, Google Gemini, Facebook Graph API, Google Sheets, Gmail
 
-Folder: [`placidway-facebook-post-automation`](placidway-facebook-post-automation)
+Folder: [`placidway-facebook-post-automation`](daily-social-post-agent)
 
 ---
 
